@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Volume of Cylinder</title>
+    <style>
+        body {
+            background-color: lavender;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 100px;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid gray;
+        }
+        button {
+            padding: 8px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: darkblue;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: royalblue;
+        }
+        h2 {
+            color: darkblue;
+        }
+    </style>
+</head>
+<body>
+    <h1>Volume of a Cylinder</h1>
+
+    <label>Enter Radius: </label>
+    <input type="number" id="radius" placeholder="Enter radius"><br>
+
+    <label>Enter Height: </label>
+    <input type="number" id="height" placeholder="Enter height"><br><br>
+
+    <button onclick="calculateVolume()">Calculate</button>
+
+    <h2 id="result"></h2>
+
+    <script>
+        function calculateVolume() {
+            const pi = 3.14159; // constant
+            let r = document.getElementById("radius").value;
+            let h = document.getElementById("height").value;
+
+            if (r === "" || h === "") {
+                document.getElementById("result").innerText = "⚠️ Please enter both radius and height!";
+                return;
+            }
+
+            let volume = pi * r * r * h;
+            document.getElementById("result").innerText = 
+                "Volume of Cylinder = " + volume.toFixed(2);
+        }
+    </script>
+</body>
+</html>
