@@ -20,7 +20,7 @@ function Login({ onLoginSuccess }) {
       });
 
       if (response.data.success) {
-        onLoginSuccess(username);
+        onLoginSuccess(username, password);
       } else {
         setError(response.data.error || "Invalid credentials");
       }

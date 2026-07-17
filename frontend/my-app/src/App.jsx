@@ -13,18 +13,21 @@ import { RiAddCircleLine } from "react-icons/ri";
 
 const App = () => {
   const [currentUser, setCurrentUser] = useState(null);
+  const [currentPassword, setCurrentPassword] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showSearchUser, setShowSearchUser] = useState(false);
   const [showClick, setShowClick] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState("home");
 
-  const handleLoginSuccess = (username) => {
+  const handleLoginSuccess = (username, password) => {
     setCurrentUser(username);
+    setCurrentPassword(password);
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setCurrentPassword(null);
   };
 
   const toggleCreatePost = () => setShowCreate((prev) => !prev);
@@ -52,7 +55,7 @@ const App = () => {
       <main>
         {showCreate ? (
           <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <CreatePost username={currentUser} setRefreshTrigger={setRefreshTrigger} onClose={() => setShowCreate(false)} />
+            <CreatePost username={currentUser} password={currentPassword} setRefreshTrigger={setRefreshTrigger} onClose={() => setShowCreate(false)} />
           </div>
         ) : (
           <>

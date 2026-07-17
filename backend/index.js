@@ -37,15 +37,15 @@ let storage = new CloudinaryStorage({cloudinary});
 
 let upload = multer({storage});
 
-// Middleware to handle image upload only
-let uploadImage = upload.single('image');
+// Middleware to handle image upload (supports one or more images)
+let uploadImages = upload.array('images', 10);
 
 // Authentication check function
 const authenticateUser = (username, password) => {
   return users.some(user => user.username === username && user.password === password);
 };
 
-app.post("/upload", uploadImage, (req, res) => {
+app.post("/upload", uploadImages, (req, res) => {
     const { username, password, caption, songId, songTitle, songChannel } = req.body;
     
     // Check if user is authorized
@@ -53,20 +53,29 @@ app.post("/upload", uploadImage, (req, res) => {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    // Check if image is provided
-    if (!req.file) {
-      return res.status(400).json({ error: "Image is required" });
+    // Check if at least one image is provided
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "At least one image is required" });
     }
 
     let client = new MongoClient(url);
     let db = client.db("insta");
     let collection = db.collection("photos");
+
+    const images = req.files.map((file) => ({
+      image_url: file.path,
+      image_name: file.filename
+    }));
     
     let obj = {
         username: username,
         caption: caption,
-        image_url: req.file.path,
-        image_name: req.file.filename,
+        // Keep legacy single-image fields (first image) so any older
+        // frontend code or existing posts keep working unchanged
+        image_url: images[0].image_url,
+        image_name: images[0].image_name,
+        // New field: full list of images for this post
+        images: images,
         upload_time: new Date()
     };
 
@@ -123,12 +132,18 @@ app.delete("/delete/:id",(req,res)=>{
       return res.status(404).json({ error: "Post not found" });
     }
     
-    // Delete image from Cloudinary
-    if (post.image_name) {
-      cloudinary.uploader.destroy(post.image_name, (error, result) => {
-        if (error) console.log("Error deleting image:", error);
-      });
-    }
+    // Delete every image in the post from Cloudinary
+    const imagesToDelete = post.images && post.images.length > 0
+      ? post.images
+      : (post.image_name ? [{ image_name: post.image_name }] : []);
+
+    imagesToDelete.forEach(({ image_name }) => {
+      if (image_name) {
+        cloudinary.uploader.destroy(image_name, (error, result) => {
+          if (error) console.log("Error deleting image:", error);
+        });
+      }
+    });
     
     return collec.deleteOne({_id});
   })
