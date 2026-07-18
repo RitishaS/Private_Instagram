@@ -3,7 +3,7 @@ import axios from "axios";
 import PostActions from "./PostActions";
 import "./Styles.css";
 
-function Profile({ username, onDelete }) {
+function Profile({ username, onDelete, onOpenChat }) {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -96,9 +96,6 @@ function Profile({ username, onDelete }) {
               {(post.songVideoId || post.songId) && (
                 <span className="profile-grid-music-badge">🎵</span>
               )}
-              <span className="profile-grid-like-badge">
-                ❤️ {(post.likes || []).length}
-              </span>
             </button>
           ))}
         </div>
@@ -116,6 +113,7 @@ function Profile({ username, onDelete }) {
               post={activePost}
               currentUser={username}
               onUpdate={handlePostUpdate}
+              onOpenChat={onOpenChat}
             />
             <button className="delete-button" onClick={() => handleDelete(activePost._id)}>
               Delete Post

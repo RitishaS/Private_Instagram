@@ -3,20 +3,17 @@ import CreatePost from "./components/CreatePost";
 import ShowPost from "./components/ShowPost";
 import SearchUser from "./components/SearchUser";
 import Profile from "./components/Profile";
-import Click from "./components/Click";
+import ChatScreen from "./components/ChatScreen";
 import Login from "./components/Login";
 import "./components/Styles.css";
 import { TiSocialInstagramCircular } from "react-icons/ti";
-import { BsCameraFill } from "react-icons/bs";
-import { AiOutlineHome, AiOutlineSearch, AiOutlineHeart, AiOutlineUser } from "react-icons/ai";
+import { AiOutlineHome, AiOutlineSearch, AiOutlineMessage, AiOutlineUser } from "react-icons/ai";
 import { RiAddCircleLine } from "react-icons/ri";
 
 const App = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPassword, setCurrentPassword] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [showSearchUser, setShowSearchUser] = useState(false);
-  const [showClick, setShowClick] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState("home");
 
@@ -32,8 +29,6 @@ const App = () => {
 
   const toggleCreatePost = () => setShowCreate((prev) => !prev);
   const refreshPosts = () => setRefreshTrigger((prev) => prev + 1);
-  const toggleSearchUser = () => setShowSearchUser((prev) => !prev);
-  const toggleClick = () => setShowClick((prev) => !prev);
 
   if (!currentUser) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
@@ -59,17 +54,11 @@ const App = () => {
           </div>
         ) : (
           <>
-            {activeTab === "home" && <ShowPost refreshTrigger={refreshTrigger} username={currentUser} />}
+            {activeTab === "home" && <ShowPost refreshTrigger={refreshTrigger} username={currentUser} onOpenChat={() => setActiveTab("chat")} />}
             {activeTab === "search" && <SearchUser />}
-            {activeTab === "likes" && (
-              <div className="placeholder-screen">
-                <div className="placeholder-icon">❤️</div>
-                <h2>Your Liked Posts</h2>
-                <p>Coming soon...</p>
-              </div>
-            )}
+            {activeTab === "chat" && <ChatScreen currentUser={currentUser} onBack={() => setActiveTab("home")} />}
             {activeTab === "profile" && (
-              <Profile username={currentUser} onDelete={refreshPosts} />
+              <Profile username={currentUser} onDelete={refreshPosts} onOpenChat={() => setActiveTab("chat")} />
             )}
           </>
         )}
@@ -96,10 +85,10 @@ const App = () => {
           <RiAddCircleLine size={28} />
         </button>
         <button 
-          className={`nav-item ${activeTab === "likes" ? "active" : ""}`}
-          onClick={() => { setShowCreate(false); setActiveTab("likes"); }}
+          className={`nav-item ${activeTab === "chat" ? "active" : ""}`}
+          onClick={() => { setShowCreate(false); setActiveTab("chat"); }}
         >
-          <AiOutlineHeart size={24} />
+          <AiOutlineMessage size={24} />
         </button>
         <button 
           className={`nav-item ${activeTab === "profile" ? "active" : ""}`}

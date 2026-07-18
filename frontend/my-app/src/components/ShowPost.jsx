@@ -5,27 +5,27 @@ import PostActions from "./PostActions";
 import "./Styles.css";
 
 
-function ShowPost(props){
+function ShowPost({ refreshTrigger, username, onOpenChat }){
   const [files, setFiles] = useState([]);
   const [activeIndex, setActiveIndex] = useState({});
 
   useEffect(() => {
     fetchFiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.currentUser]);
+  }, [username]);
 
   useEffect(()=>{
     fetchFiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[props.refreshTrigger]);
+  },[refreshTrigger]);
 
   const fetchFiles = () => {
     // The Feed is a partner's-eye view: it excludes the logged-in user's
     // own posts (those belong on their Profile), and the exclusion is done
     // by the backend against the real Mongo data - not by hiding posts
     // client-side after fetching everything.
-    const query = props.currentUser
-      ? `?exclude=${encodeURIComponent(props.currentUser)}`
+    const query = username
+      ? `?exclude=${encodeURIComponent(username)}`
       : "";
     axios
       .get(`http://localhost:3000/files${query}`)
@@ -73,7 +73,7 @@ function ShowPost(props){
   };
 
   return (
-    <div className="show-posts-container">
+    <div className="insta-feed-container">
       <h2>Your Feed</h2>
       <div className="posts-feed">
         {files.map((file) => {
@@ -144,11 +144,12 @@ function ShowPost(props){
                 />
               )}
 
-              {/* Likes/comments (same PostActions component/logic as before) */}
+              {/* Comments and direct-message controls */}
               <PostActions
                 post={file}
-                currentUser={props.currentUser}
+                currentUser={username}
                 onUpdate={handlePostUpdate}
+                onOpenChat={onOpenChat}
               />
 
               {/* Caption + delete */}
