@@ -51,7 +51,7 @@ function SearchUser(){
           searchResults.length > 0 ? (
             searchResults.map((file) => (
               <div key={file._id} className="post-card">
-                <div className="post-image-container">
+                <div className="post-image-wrapper">
                   <img
                     src={file.image_url}
                     alt={file.image_name}
@@ -65,8 +65,24 @@ function SearchUser(){
                     videoId={file.songId}
                   />
                 )}
-                <div className="post-footer">
-                  <p className="post-username">@{file.username}</p>
+                <div className="post-caption-section">
+                  <div className="post-header">
+  <div className="post-header-left">
+    <div className="user-avatar">
+      {file.username.charAt(0).toUpperCase()}
+    </div>
+
+    <div>
+      <div className="username">
+        @{file.username}
+      </div>
+
+      <div className="post-time">
+        {formatTime(file.upload_time)}
+      </div>
+    </div>
+  </div>
+</div>
                   <p className="post-caption">{file.caption}</p>
                   <p className="post-time">{formatTime(file.upload_time)}</p>
                 </div>

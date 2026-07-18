@@ -45,6 +45,9 @@ const authenticateUser = (username, password) => {
   return users.some(user => user.username === username && user.password === password);
 };
 
+// Escapes special regex characters so a username can be safely used inside a $regex query
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 app.post("/upload", uploadImages, (req, res) => {
     const { username, password, caption, songId, songTitle, songChannel } = req.body;
     
@@ -76,6 +79,9 @@ app.post("/upload", uploadImages, (req, res) => {
         image_name: images[0].image_name,
         // New field: full list of images for this post
         images: images,
+        // Real, persisted engagement data (source of truth for both Feed and Profile)
+        likes: [],
+        comments: [],
         upload_time: new Date()
     };
 
@@ -108,15 +114,123 @@ app.post("/login", (req, res) => {
 
 app.get("/files", (req, res) => {
   let client = new MongoClient(url);
-  let username=req.query.username;
-  let obj=username?{username}:{};
+  const { username, exclude } = req.query;
+
+  // Build the query out of real, explicit conditions instead of a single
+  // implicit equality object, so "give me my own posts" (username=) and
+  // "give me everyone else's posts" (exclude=) can never be conflated.
+  const conditions = [];
+
+  if (username && username.trim()) {
+    conditions.push({
+      username: { $regex: `^${escapeRegex(username.trim())}$`, $options: "i" }
+    });
+  }
+
+  if (exclude && exclude.trim()) {
+    conditions.push({
+      username: { $not: { $regex: `^${escapeRegex(exclude.trim())}$`, $options: "i" } }
+    });
+  }
+
+  const query = conditions.length > 0 ? { $and: conditions } : {};
+
       let db = client.db("insta");
       let collec= db.collection("photos");
-      collec.find(obj).toArray()
+      collec.find(query).sort({ upload_time: -1 }).toArray()
     .then((result) => res.json(result))
     .catch((err) => {
-      res.send(err);
+      res.status(500).json({ error: "Error fetching posts", details: err });
     })
+});
+
+// Toggle a like on a post (persisted in MongoDB, shared by Feed and Profile)
+app.post("/like/:id", (req, res) => {
+  const { username } = req.body;
+  if (!username || !username.trim()) {
+    return res.status(400).json({ error: "username is required" });
+  }
+
+  let _id;
+  try {
+    _id = new ObjectId(req.params.id);
+  } catch (err) {
+    return res.status(400).json({ error: "Invalid post id" });
+  }
+
+  let client = new MongoClient(url);
+  let db = client.db("insta");
+  let collec = db.collection("photos");
+  const cleanUsername = username.trim();
+
+  collec.findOne({ _id })
+    .then((post) => {
+      if (!post) {
+        res.status(404).json({ error: "Post not found" });
+        return null;
+      }
+
+      const likes = post.likes || [];
+      const alreadyLiked = likes.some(
+        (u) => u.toLowerCase() === cleanUsername.toLowerCase()
+      );
+
+      const update = alreadyLiked
+        ? { $pull: { likes: { $regex: `^${escapeRegex(cleanUsername)}$`, $options: "i" } } }
+        : { $addToSet: { likes: cleanUsername } };
+
+      return collec.updateOne({ _id }, update).then(() => collec.findOne({ _id }));
+    })
+    .then((updatedPost) => {
+      if (updatedPost) {
+        res.json({ success: true, likes: updatedPost.likes || [] });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ error: "Error updating like", details: err });
+    });
+});
+
+// Add a comment to a post (persisted in MongoDB, shared by Feed and Profile)
+app.post("/comment/:id", (req, res) => {
+  const { username, text } = req.body;
+  if (!username || !username.trim() || !text || !text.trim()) {
+    return res.status(400).json({ error: "username and comment text are required" });
+  }
+
+  let _id;
+  try {
+    _id = new ObjectId(req.params.id);
+  } catch (err) {
+    return res.status(400).json({ error: "Invalid post id" });
+  }
+
+  let client = new MongoClient(url);
+  let db = client.db("insta");
+  let collec = db.collection("photos");
+
+  const comment = {
+    username: username.trim(),
+    text: text.trim(),
+    time: new Date()
+  };
+
+  collec.updateOne({ _id }, { $push: { comments: comment } })
+    .then((result) => {
+      if (result.matchedCount === 0) {
+        res.status(404).json({ error: "Post not found" });
+        return null;
+      }
+      return collec.findOne({ _id });
+    })
+    .then((updatedPost) => {
+      if (updatedPost) {
+        res.json({ success: true, comments: updatedPost.comments || [] });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ error: "Error adding comment", details: err });
+    });
 });
 
 app.delete("/delete/:id",(req,res)=>{

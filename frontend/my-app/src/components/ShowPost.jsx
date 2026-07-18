@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import MusicCard from "./MusicCard";
+import PostActions from "./PostActions";
 import "./Styles.css";
 
 
@@ -10,15 +11,24 @@ function ShowPost(props){
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.currentUser]);
 
   useEffect(()=>{
     fetchFiles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[props.refreshTrigger]);
 
   const fetchFiles = () => {
+    // The Feed is a partner's-eye view: it excludes the logged-in user's
+    // own posts (those belong on their Profile), and the exclusion is done
+    // by the backend against the real Mongo data - not by hiding posts
+    // client-side after fetching everything.
+    const query = props.currentUser
+      ? `?exclude=${encodeURIComponent(props.currentUser)}`
+      : "";
     axios
-      .get("http://localhost:3000/files")
+      .get(`http://localhost:3000/files${query}`)
       .then((response) => {
         setFiles(response.data);
       })
@@ -36,6 +46,12 @@ function ShowPost(props){
       .catch((error) => {
         console.error("Error deleting file", error);
       });
+  };
+
+  const handlePostUpdate = (updatedPost) => {
+    setFiles((prev) =>
+      prev.map((f) => (f._id === updatedPost._id ? updatedPost : f))
+    );
   };
 
   const formatTime = (time) => {
@@ -59,19 +75,33 @@ function ShowPost(props){
   return (
     <div className="show-posts-container">
       <h2>Your Feed</h2>
-      <div className="posts-grid">
+      <div className="posts-feed">
         {files.map((file) => {
           const images = getPostImages(file);
           const current = activeIndex[file._id] || 0;
 
           return (
-            <div key={file._id} className="post-card">
-              <div className="post-image-container">
+            <div key={file._id} className="insta-post">
+              {/* Header: avatar + username + timestamp */}
+              <div className="post-header">
+                <div className="post-header-left">
+                  <div className="user-avatar">
+                    {(file.username || "U").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="post-user-info">
+                    <span className="post-username">@{file.username}</span>
+                    <span className="post-location">{formatTime(file.upload_time)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Image carousel */}
+              <div className="post-image-wrapper">
                 {images.length > 0 && (
                   <img
                     src={images[current].image_url}
                     alt={images[current].image_name}
-                    className="post-image"
+                    className="post-image-main"
                   />
                 )}
 
@@ -104,7 +134,8 @@ function ShowPost(props){
                   </>
                 )}
               </div>
-              
+
+              {/* Music (same MusicCard component/logic as before) */}
               {file.songId && (
                 <MusicCard
                   title={file.songTitle}
@@ -112,11 +143,20 @@ function ShowPost(props){
                   videoId={file.songId}
                 />
               )}
-              
-              <div className="post-footer">
-                <p className="post-username">@{file.username}</p>
-                <p className="post-caption">{file.caption}</p>
-                <p className="post-time">{formatTime(file.upload_time)}</p>
+
+              {/* Likes/comments (same PostActions component/logic as before) */}
+              <PostActions
+                post={file}
+                currentUser={props.currentUser}
+                onUpdate={handlePostUpdate}
+              />
+
+              {/* Caption + delete */}
+              <div className="post-caption-section">
+                <div>
+                  <span className="caption-username">@{file.username}</span>
+                  <span className="caption-text">{file.caption}</span>
+                </div>
                 <button
                   className="delete-button"
                   onClick={() => handleDelete(file._id)}
@@ -127,6 +167,10 @@ function ShowPost(props){
             </div>
           );
         })}
+
+        {files.length === 0 && (
+          <div className="no-posts">No posts yet.</div>
+        )}
       </div>
     </div>
   );

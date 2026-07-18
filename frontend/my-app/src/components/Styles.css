@@ -502,6 +502,98 @@ main {
   cursor: pointer;
   transition: all 0.25s ease;
   font-family: var(--font-body);
+  display: block;
+  text-align: center;
+}
+
+.image-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px;
+}
+
+.image-preview-item {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-bg-mist);
+}
+
+.image-preview-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.image-preview-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-image-container {
+  position: relative;
+}
+
+.post-image-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-image-nav-prev {
+  left: 8px;
+}
+
+.post-image-nav-next {
+  right: 8px;
+}
+
+.post-image-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+}
+
+.post-image-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.post-image-dot.active {
+  background: #fff;
 }
 
 .file-upload-btn:hover {
@@ -934,6 +1026,15 @@ main {
   min-width: 0;
 }
 
+/* Scoped so this doesn't collide with the smaller .post-username style
+   used by SearchUser's result cards further down this file - both keep
+   their own look without either one overriding the other. */
+.post-header .post-username {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--color-ink);
+}
+
 .post-username {
   font-weight: 700;
   font-size: 14.5px;
@@ -972,6 +1073,7 @@ main {
 }
 
 .post-image-wrapper {
+  position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
@@ -1014,8 +1116,82 @@ main {
   transform: scale(0.88);
 }
 
-.action-btn.like-btn {
-  color: inherit;
+.action-btn.like-btn.liked {
+  animation: heartPop 0.35s cubic-bezier(0.17, 0.89, 0.32, 1.49);
+}
+
+.post-actions-block {
+  padding: 0 12px 10px;
+}
+
+.post-comments-list {
+  padding: 0 6px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.post-comment {
+  font-size: 13px;
+  color: var(--color-ink);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.post-comment strong {
+  color: var(--color-deep);
+  margin-right: 4px;
+}
+
+.post-comment-form {
+  display: flex;
+  gap: 8px;
+  padding: 4px 6px 0;
+}
+
+.post-comment-input {
+  flex: 1;
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--radius-pill);
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-family: var(--font-body);
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.post-comment-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.post-comment-submit {
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  padding: 0 6px;
+}
+
+.post-comment-submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.profile-grid-like-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: var(--radius-pill);
+  line-height: 1.4;
 }
 
 .like-icon-pop {
@@ -1152,27 +1328,11 @@ main {
   text-align: left;
 }
 
-.show-posts-container {
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 0 16px 32px;
-  box-sizing: border-box;
-}
-
-.show-posts-container > h2 {
-  margin: 0 0 18px;
-  text-align: center;
-}
-
 .posts-grid {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  width: 100%;
-  gap: 24px;
-  padding: 0;
-  overflow-x: clip;
+  gap: 12px;
+  padding: 4px 0;
 }
 
 .post-card {
@@ -1182,8 +1342,7 @@ main {
   overflow: hidden;
   transition: transform 0.2s ease;
   width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
+  max-width: 100%;
 }
 
 .post-card:hover {
@@ -1212,17 +1371,6 @@ main {
   align-items: flex-start;
   padding: 10px 12px 12px;
   gap: 4px;
-}
-
-@media (max-width: 599px) {
-  .show-posts-container {
-    max-width: none;
-    padding: 0 12px 24px;
-  }
-
-  .posts-grid {
-    gap: 20px;
-  }
 }
 
 .post-caption {
@@ -1624,7 +1772,6 @@ main {
   .create-post-container h2 {
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   }
-
 }
 
 /* =========================================================================

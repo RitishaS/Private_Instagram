@@ -59,7 +59,7 @@ const App = () => {
           </div>
         ) : (
           <>
-            {activeTab === "home" && <ShowPost refreshTrigger={refreshTrigger} />}
+            {activeTab === "home" && <ShowPost refreshTrigger={refreshTrigger} username={currentUser} />}
             {activeTab === "search" && <SearchUser />}
             {activeTab === "likes" && (
               <div className="placeholder-screen">

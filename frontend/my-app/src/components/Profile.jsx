@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import PostActions from "./PostActions";
 import "./Styles.css";
 
 function Profile({ username, onDelete }) {
@@ -38,6 +39,15 @@ function Profile({ username, onDelete }) {
       .catch(() => {
         setError("Error deleting post.");
       });
+  };
+
+  const handlePostUpdate = (updatedPost) => {
+    setPosts((prev) =>
+      prev.map((p) => (p._id === updatedPost._id ? updatedPost : p))
+    );
+    setActivePost((prev) =>
+      prev && prev._id === updatedPost._id ? updatedPost : prev
+    );
   };
 
   const musicCount = posts.filter((p) => p.songVideoId || p.songId).length;
@@ -86,6 +96,9 @@ function Profile({ username, onDelete }) {
               {(post.songVideoId || post.songId) && (
                 <span className="profile-grid-music-badge">🎵</span>
               )}
+              <span className="profile-grid-like-badge">
+                ❤️ {(post.likes || []).length}
+              </span>
             </button>
           ))}
         </div>
@@ -99,6 +112,11 @@ function Profile({ username, onDelete }) {
             </button>
             <img src={activePost.image_url} alt={activePost.caption || "post"} />
             <div className="profile-lightbox-caption">{activePost.caption}</div>
+            <PostActions
+              post={activePost}
+              currentUser={username}
+              onUpdate={handlePostUpdate}
+            />
             <button className="delete-button" onClick={() => handleDelete(activePost._id)}>
               Delete Post
             </button>
