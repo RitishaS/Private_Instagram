@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import CreatePost from "./components/CreatePost";
 import ShowPost from "./components/ShowPost";
 import SearchUser from "./components/SearchUser";
 import Profile from "./components/Profile";
 import ChatScreen from "./components/ChatScreen";
 import Login from "./components/Login";
+import Avatar from "./components/Avatar";
 import "./components/Styles.css";
 import { TiSocialInstagramCircular } from "react-icons/ti";
 import { AiOutlineHome, AiOutlineSearch, AiOutlineMessage, AiOutlineUser } from "react-icons/ai";
@@ -16,6 +18,32 @@ const App = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState("home");
+  const [profiles, setProfiles] = useState({});
+
+  useEffect(() => {
+    if (!currentUser) {
+      setProfiles({});
+      return;
+    }
+
+    axios.get("http://localhost:3000/profiles")
+      .then((response) => {
+        setProfiles(
+          (response.data || []).reduce((allProfiles, profile) => ({
+            ...allProfiles,
+            [profile.username.toLowerCase()]: profile.profilePictureUrl
+          }), {})
+        );
+      })
+      .catch((error) => console.error("Unable to load profiles", error));
+  }, [currentUser]);
+
+  const updateProfilePicture = (profile) => {
+    setProfiles((previous) => ({
+      ...previous,
+      [profile.username.toLowerCase()]: profile.profilePictureUrl
+    }));
+  };
 
   const handleLoginSuccess = (username, password) => {
     setCurrentUser(username);
@@ -39,10 +67,15 @@ const App = () => {
       <header className="app-header">
         <h1>
           <span className="Ti"><TiSocialInstagramCircular /></span>
-          <span className="logo">Private Couple Instagram</span>
+          <span className="logo">Manan's Instagram</span>
         </h1>
         <div className="user-info">
-          <span className="username">👤 {currentUser}</span>
+          <Avatar
+            username={currentUser}
+            imageUrl={profiles[currentUser.toLowerCase()]}
+            className="header-avatar"
+          />
+          <span className="username">{currentUser}</span>
           <button className="logout-button" onClick={handleLogout}>Logout</button>
         </div>
       </header>
@@ -54,11 +87,19 @@ const App = () => {
           </div>
         ) : (
           <>
-            {activeTab === "home" && <ShowPost refreshTrigger={refreshTrigger} username={currentUser} onOpenChat={() => setActiveTab("chat")} />}
-            {activeTab === "search" && <SearchUser />}
-            {activeTab === "chat" && <ChatScreen currentUser={currentUser} onBack={() => setActiveTab("home")} />}
+            {activeTab === "home" && <ShowPost refreshTrigger={refreshTrigger} username={currentUser} profilePictures={profiles} onOpenChat={() => setActiveTab("chat")} />}
+            {activeTab === "search" && <SearchUser profilePictures={profiles} />}
+            {activeTab === "chat" && <ChatScreen currentUser={currentUser} profilePictures={profiles} onBack={() => setActiveTab("home")} />}
             {activeTab === "profile" && (
-              <Profile username={currentUser} onDelete={refreshPosts} onOpenChat={() => setActiveTab("chat")} />
+              <Profile
+                username={currentUser}
+                password={currentPassword}
+                profilePicture={profiles[currentUser.toLowerCase()]}
+                profilePictures={profiles}
+                onProfilePictureUpdated={updateProfilePicture}
+                onDelete={refreshPosts}
+                onOpenChat={() => setActiveTab("chat")}
+              />
             )}
           </>
         )}

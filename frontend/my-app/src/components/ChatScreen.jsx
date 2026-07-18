@@ -3,6 +3,7 @@ import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
 import { FiArrowLeft, FiSend, FiSmile } from "react-icons/fi";
 import { io } from "socket.io-client";
+import Avatar from "./Avatar";
 import "./Styles.css";
 
 const CHAT_SERVER_URL = "http://localhost:3000";
@@ -13,7 +14,7 @@ const formatTime = (value) =>
     new Date(value)
   );
 
-function ChatScreen({ currentUser, onBack }) {
+function ChatScreen({ currentUser, profilePictures, onBack }) {
   const partner = getPartner(currentUser);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
@@ -106,7 +107,11 @@ function ChatScreen({ currentUser, onBack }) {
         <button type="button" className="chat-back-button" onClick={onBack} aria-label="Back to feed">
           <FiArrowLeft />
         </button>
-        <div className="chat-avatar">{partner.charAt(0)}</div>
+        <Avatar
+          username={partner}
+          imageUrl={profilePictures?.[partner.toLowerCase()]}
+          className="chat-avatar"
+        />
         <div>
           <h2>{partner}</h2>
           <p className={isPartnerOnline ? "online-status" : "offline-status"}>

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import MusicCard from "./MusicCard";
 import PostActions from "./PostActions";
+import Avatar from "./Avatar";
 import "./Styles.css";
 
 
-function ShowPost({ refreshTrigger, username, onOpenChat }){
+function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
   const [files, setFiles] = useState([]);
   const [activeIndex, setActiveIndex] = useState({});
 
@@ -39,7 +40,7 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
 
   const handleDelete = (id) => {
     axios
-      .delete(`http://localhost:3000/delete/${id}`)
+      .delete(`http://localhost:3000/delete/${id}`, { data: { username } })
       .then(() => {
         fetchFiles();
       })
@@ -85,9 +86,11 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
               {/* Header: avatar + username + timestamp */}
               <div className="post-header">
                 <div className="post-header-left">
-                  <div className="user-avatar">
-                    {(file.username || "U").charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar
+                    username={file.username}
+                    imageUrl={profilePictures?.[file.username?.toLowerCase()]}
+                    className="user-avatar"
+                  />
                   <div className="post-user-info">
                     <span className="post-username">@{file.username}</span>
                     <span className="post-location">{formatTime(file.upload_time)}</span>
@@ -148,6 +151,7 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
               <PostActions
                 post={file}
                 currentUser={username}
+                profilePictures={profilePictures}
                 onUpdate={handlePostUpdate}
                 onOpenChat={onOpenChat}
               />
@@ -158,12 +162,14 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
                   <span className="caption-username">@{file.username}</span>
                   <span className="caption-text">{file.caption}</span>
                 </div>
-                <button
-                  className="delete-button"
-                  onClick={() => handleDelete(file._id)}
-                >
-                  Delete
-                </button>
+                {file.username?.toLowerCase() === username?.toLowerCase() && (
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete(file._id)}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           );

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import Avatar from "./Avatar";
 import "./Styles.css";
 
 // Renders like + comment controls for a single post, and persists every
@@ -7,7 +8,7 @@ import "./Styles.css";
 // the Profile screen so likes/comments can never drift out of sync between
 // them - there is exactly one source of truth (the post document in Mongo)
 // and exactly one place that knows how to read/write it.
-function PostActions({ post, currentUser, onUpdate }) {
+function PostActions({ post, currentUser, profilePictures, onUpdate }) {
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -78,7 +79,12 @@ function PostActions({ post, currentUser, onUpdate }) {
         <div className="post-comments-list">
           {comments.map((c, i) => (
             <p className="post-comment" key={`${c.username}-${i}`}>
-              <strong>@{c.username}</strong> {c.text}
+              <Avatar
+                username={c.username}
+                imageUrl={profilePictures?.[c.username?.toLowerCase()]}
+                className="comment-avatar"
+              />
+              <span><strong>@{c.username}</strong> {c.text}</span>
             </p>
           ))}
         </div>

@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import MusicCard from "./MusicCard";
+import Avatar from "./Avatar";
 import "./Styles.css";
 
-function SearchUser(){
+function SearchUser({ profilePictures }){
   const [username, setUsername] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [error, setError] = useState("");
@@ -68,9 +69,11 @@ function SearchUser(){
                 <div className="post-caption-section">
                   <div className="post-header">
   <div className="post-header-left">
-    <div className="user-avatar">
-      {file.username.charAt(0).toUpperCase()}
-    </div>
+    <Avatar
+      username={file.username}
+      imageUrl={profilePictures?.[file.username?.toLowerCase()]}
+      className="user-avatar"
+    />
 
     <div>
       <div className="username">

@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PostActions from "./PostActions";
+import Avatar from "./Avatar";
 import "./Styles.css";
 
-function Profile({ username, onDelete, onOpenChat }) {
+function Profile({ username, password, profilePicture, profilePictures, onProfilePictureUpdated, onDelete, onOpenChat }) {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [activePost, setActivePost] = useState(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [selectedProfilePicture, setSelectedProfilePicture] = useState(null);
+  const [profilePreview, setProfilePreview] = useState("");
+  const [profilePictureMessage, setProfilePictureMessage] = useState("");
+  const [updatingProfilePicture, setUpdatingProfilePicture] = useState(false);
 
   const fetchPosts = () => {
     setLoading(true);
@@ -30,7 +36,7 @@ function Profile({ username, onDelete, onOpenChat }) {
 
   const handleDelete = (id) => {
     axios
-      .delete(`http://localhost:3000/delete/${id}`)
+      .delete(`http://localhost:3000/delete/${id}`, { data: { username } })
       .then(() => {
         setActivePost(null);
         fetchPosts();
@@ -52,14 +58,87 @@ function Profile({ username, onDelete, onOpenChat }) {
 
   const musicCount = posts.filter((p) => p.songVideoId || p.songId).length;
 
+  // New posts store every upload in images; older posts only have image_url.
+  const getPostImages = (post) => {
+    if (Array.isArray(post.images) && post.images.length > 0) return post.images;
+    return post.image_url
+      ? [{ image_url: post.image_url, image_name: post.image_name }]
+      : [];
+  };
+
+  const openPost = (post) => {
+    setActiveImageIndex(0);
+    setActivePost(post);
+  };
+
+  const handleProfilePictureSelection = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setProfilePictureMessage("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProfilePictureMessage("Profile picture must be 5 MB or smaller.");
+      return;
+    }
+
+    if (profilePreview) URL.revokeObjectURL(profilePreview);
+    setSelectedProfilePicture(file);
+    setProfilePreview(URL.createObjectURL(file));
+    setProfilePictureMessage("");
+  };
+
+  const uploadProfilePicture = async () => {
+    if (!selectedProfilePicture) return;
+    const formData = new FormData();
+    formData.append("profilePicture", selectedProfilePicture);
+    formData.append("username", username);
+    formData.append("password", password);
+
+    try {
+      setUpdatingProfilePicture(true);
+      const response = await axios.post("http://localhost:3000/profile-picture", formData);
+      onProfilePictureUpdated(response.data.profile);
+      URL.revokeObjectURL(profilePreview);
+      setSelectedProfilePicture(null);
+      setProfilePreview("");
+      setProfilePictureMessage("Profile picture updated.");
+    } catch (uploadError) {
+      setProfilePictureMessage(uploadError.response?.data?.error || "Unable to update profile picture.");
+    } finally {
+      setUpdatingProfilePicture(false);
+    }
+  };
+
   return (
     <div className="profile-screen">
       <div className="profile-header-card">
-        <div className="profile-avatar">{(username || "U").charAt(0).toUpperCase()}</div>
+        <Avatar username={username} imageUrl={profilePreview || profilePicture} className="profile-avatar" />
         <div className="profile-name-block">
           <div className="profile-username">{username}</div>
-          <div className="profile-tagline">💗 Private Couple Space</div>
+          <div className="profile-tagline">💗 Kuchu Puchu</div>
         </div>
+      </div>
+
+      <div className="profile-picture-editor">
+        <input
+          id="profile-picture-input"
+          type="file"
+          accept="image/*"
+          onChange={handleProfilePictureSelection}
+          className="profile-picture-input"
+        />
+        <label htmlFor="profile-picture-input" className="profile-picture-select">
+          Edit Profile Picture
+        </label>
+        {selectedProfilePicture && (
+          <button type="button" className="profile-picture-save" onClick={uploadProfilePicture} disabled={updatingProfilePicture}>
+            {updatingProfilePicture ? "Uploading..." : "Save Picture"}
+          </button>
+        )}
+        {profilePictureMessage && <p className="profile-picture-message">{profilePictureMessage}</p>}
       </div>
 
       <div className="profile-stats-row">
@@ -85,19 +164,24 @@ function Profile({ username, onDelete, onOpenChat }) {
         <div className="no-posts">No posts yet. Share your first memory! 🎞️</div>
       ) : (
         <div className="profile-grid">
-          {posts.map((post) => (
-            <button
-              key={post._id}
-              className="profile-grid-item"
-              onClick={() => setActivePost(post)}
-              type="button"
-            >
-              <img src={post.image_url} alt={post.caption || "post"} />
+          {posts.map((post) => {
+            const images = getPostImages(post);
+            return (
+              <button
+                key={post._id}
+                className="profile-grid-item"
+                onClick={() => openPost(post)}
+                type="button"
+              >
+              {images.length > 0 && (
+                <img src={images[0].image_url} alt={post.caption || "post"} />
+              )}
               {(post.songVideoId || post.songId) && (
                 <span className="profile-grid-music-badge">🎵</span>
               )}
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -107,17 +191,56 @@ function Profile({ username, onDelete, onOpenChat }) {
             <button className="close-btn profile-lightbox-close" onClick={() => setActivePost(null)}>
               ✕
             </button>
-            <img src={activePost.image_url} alt={activePost.caption || "post"} />
+            {(() => {
+              const images = getPostImages(activePost);
+              const image = images[activeImageIndex] || images[0];
+              return image && (
+                <>
+                  <img src={image.image_url} alt={activePost.caption || "post"} />
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        className="post-image-nav post-image-nav-prev"
+                        onClick={() => setActiveImageIndex((index) => Math.max(0, index - 1))}
+                        aria-label="Previous photo"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        className="post-image-nav post-image-nav-next"
+                        onClick={() => setActiveImageIndex((index) => Math.min(images.length - 1, index + 1))}
+                        aria-label="Next photo"
+                      >
+                        ›
+                      </button>
+                      <div className="post-image-dots">
+                        {images.map((_, index) => (
+                          <span
+                            key={index}
+                            className={`post-image-dot ${index === activeImageIndex ? "active" : ""}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
             <div className="profile-lightbox-caption">{activePost.caption}</div>
             <PostActions
               post={activePost}
               currentUser={username}
+              profilePictures={profilePictures}
               onUpdate={handlePostUpdate}
               onOpenChat={onOpenChat}
             />
-            <button className="delete-button" onClick={() => handleDelete(activePost._id)}>
-              Delete Post
-            </button>
+            {activePost.username?.toLowerCase() === username?.toLowerCase() && (
+              <button className="delete-button" onClick={() => handleDelete(activePost._id)}>
+                Delete Post
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -181,6 +181,23 @@ main {
   white-space: nowrap;
 }
 
+.header-avatar {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.shared-avatar {
+  overflow: hidden;
+}
+
+.shared-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .logout-button {
   padding: 7px 14px;
   background: var(--color-surface);
@@ -1135,6 +1152,23 @@ main {
   color: var(--color-ink);
   margin: 0;
   line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comment-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gradient-avatar);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .post-comment strong {
@@ -1460,6 +1494,49 @@ main {
   font-size: 12.5px;
   color: var(--color-ink-soft);
   margin-top: 2px;
+}
+
+.profile-picture-editor {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 4px 14px;
+}
+
+.profile-picture-input {
+  display: none;
+}
+
+.profile-picture-select,
+.profile-picture-save {
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-picture-select {
+  background: var(--gradient-romance-soft);
+  color: var(--color-primary-dark);
+}
+
+.profile-picture-save {
+  background: var(--gradient-romance);
+  color: #fff;
+}
+
+.profile-picture-save:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.profile-picture-message {
+  width: 100%;
+  font-size: 12px;
+  color: var(--color-ink-soft);
 }
 
 .profile-stats-row {

@@ -47,6 +47,16 @@ let upload = multer({storage});
 
 // Middleware to handle image upload (supports one or more images)
 let uploadImages = upload.array('images', 10);
+const MAX_PROFILE_PICTURE_SIZE = 5 * 1024 * 1024;
+const PROFILE_PICTURE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const profilePictureUpload = multer({
+  storage,
+  limits: { fileSize: MAX_PROFILE_PICTURE_SIZE },
+  fileFilter: (req, file, cb) => {
+    if (PROFILE_PICTURE_MIME_TYPES.has(file.mimetype)) return cb(null, true);
+    cb(new Error("Profile picture must be a JPG, PNG, WebP, or GIF image"));
+  }
+}).single("profilePicture");
 
 // Authentication check function
 const authenticateUser = (username, password) => {
@@ -58,6 +68,13 @@ const getKnownUsername = (username) => {
     (item) => item.username.toLowerCase() === (username || "").trim().toLowerCase()
   );
   return user ? user.username : null;
+};
+
+const getDefaultProfilePicture = (username) => {
+  const initial = username.charAt(0).toUpperCase();
+  const color = username === "Ritisha" ? "#ff6b9d" : "#7c3aed";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="${color}"/><text x="60" y="76" text-anchor="middle" font-family="Arial, sans-serif" font-size="58" font-weight="700" fill="white">${initial}</text></svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
 const getOtherUser = (username) =>
@@ -134,6 +151,73 @@ app.post("/login", (req, res) => {
   }
 });
 
+// Profiles are kept independently from posts so one picture is reused across
+// the feed, comments, search, chat, header, and profile page.
+app.get("/profiles", async (req, res) => {
+  try {
+    const client = new MongoClient(url);
+    const collection = client.db("insta").collection("userProfiles");
+
+    await collection.bulkWrite(
+      users.map(({ username }) => ({
+        updateOne: {
+          filter: { username },
+          update: {
+            $setOnInsert: {
+              username,
+              profilePictureUrl: getDefaultProfilePicture(username),
+              updatedAt: new Date()
+            }
+          },
+          upsert: true
+        }
+      }))
+    );
+
+    const profiles = await collection.find({ username: { $in: users.map((user) => user.username) } }).toArray();
+    res.json(profiles);
+  } catch (err) {
+    res.status(500).json({ error: "Unable to load profiles" });
+  }
+});
+
+app.post("/profile-picture", (req, res) => {
+  profilePictureUpload(req, res, async (uploadError) => {
+    if (uploadError) {
+      const error = uploadError.code === "LIMIT_FILE_SIZE"
+        ? "Profile picture must be 5 MB or smaller"
+        : uploadError.message || "Unable to upload profile picture";
+      return res.status(400).json({ error });
+    }
+
+    const username = getKnownUsername(req.body.username);
+    if (!authenticateUser(username, req.body.password)) {
+      return res.status(401).json({ error: "Invalid username or password" });
+    }
+
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ error: "A profile picture is required" });
+    }
+
+    try {
+      const profile = {
+        username,
+        profilePictureUrl: req.file.path,
+        updatedAt: new Date()
+      };
+      const client = new MongoClient(url);
+      await client.db("insta").collection("userProfiles").updateOne(
+        { username },
+        { $set: profile },
+        { upsert: true }
+      );
+      res.json({ success: true, profile });
+    } catch (err) {
+      res.status(500).json({ error: "Unable to save profile picture" });
+    }
+  });
+});
+
 app.get("/files", (req, res) => {
   let client = new MongoClient(url);
   const { username, exclude } = req.query;
@@ -160,10 +244,74 @@ app.get("/files", (req, res) => {
       let db = client.db("insta");
       let collec= db.collection("photos");
       collec.find(query).sort({ upload_time: -1 }).toArray()
-    .then((result) => res.json(result))
+    .then((result) => {
+      const uploadOrigin = `${req.protocol}://${req.get("host")}`;
+      const toRenderableUrl = (imageUrl) =>
+        imageUrl && imageUrl.startsWith("/")
+          ? `${uploadOrigin}${imageUrl}`
+          : imageUrl;
+
+      // Older uploads stored local paths such as /uploads/photo.jpg. Those
+      // paths must be served from Express, not resolved against the frontend.
+      const posts = result.map((post) => ({
+        ...post,
+        image_url: toRenderableUrl(post.image_url),
+        images: Array.isArray(post.images)
+          ? post.images.map((image) => ({
+              ...image,
+              image_url: toRenderableUrl(image.image_url)
+            }))
+          : post.images
+      }));
+
+      res.json(posts);
+    })
     .catch((err) => {
       res.status(500).json({ error: "Error fetching posts", details: err });
     })
+});
+
+// Toggle the logged-in user's like and return the post's current likes so the
+// client can update its existing card without reloading the full feed.
+app.post("/like/:id", async (req, res) => {
+  const username = getKnownUsername(req.body.username);
+  if (!username) {
+    return res.status(400).json({ error: "A valid username is required" });
+  }
+
+  let _id;
+  try {
+    _id = new ObjectId(req.params.id);
+  } catch (err) {
+    return res.status(400).json({ error: "Invalid post id" });
+  }
+
+  try {
+    const client = new MongoClient(url);
+    const collec = client.db("insta").collection("photos");
+    const post = await collec.findOne({ _id });
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const likes = Array.isArray(post.likes) ? post.likes : [];
+    const usernamePattern = new RegExp(`^${escapeRegex(username)}$`, "i");
+    const hasLiked = likes.some(
+      (likedBy) => typeof likedBy === "string" && usernamePattern.test(likedBy)
+    );
+
+    if (hasLiked) {
+      await collec.updateOne({ _id }, { $pull: { likes: usernamePattern } });
+    } else {
+      await collec.updateOne({ _id }, { $addToSet: { likes: username } });
+    }
+
+    const updatedPost = await collec.findOne({ _id });
+    res.json({ success: true, likes: updatedPost.likes || [] });
+  } catch (err) {
+    res.status(500).json({ error: "Error updating like" });
+  }
 });
 
 // Add a comment to a post (persisted in MongoDB, shared by Feed and Profile)
@@ -209,16 +357,30 @@ app.post("/comment/:id", (req, res) => {
 });
 
 app.delete("/delete/:id",(req,res)=>{
+  const username = getKnownUsername(req.body && req.body.username);
+  if (!username) {
+    return res.status(400).json({ error: "A valid username is required" });
+  }
+
+  let _id;
+  try {
+    _id = new ObjectId(req.params.id);
+  } catch (err) {
+    return res.status(400).json({ error: "Invalid post id" });
+  }
+
   let client = new MongoClient(url);
   let db = client.db("insta");
   let collec = db.collection("photos");
-  let id = req.params.id;
-  let _id = new ObjectId(id);
   
   collec.findOne({_id})
   .then((post)=>{
     if (!post) {
       return res.status(404).json({ error: "Post not found" });
+    }
+
+    if ((post.username || "").toLowerCase() !== username.toLowerCase()) {
+      return res.status(403).json({ error: "You can only delete your own posts" });
     }
     
     // Delete every image in the post from Cloudinary
@@ -237,7 +399,9 @@ app.delete("/delete/:id",(req,res)=>{
     return collec.deleteOne({_id});
   })
   .then((result)=> {
-    res.json({ success: true, message: "Post deleted successfully" });
+    if (result && result.deletedCount === 1) {
+      res.json({ success: true, message: "Post deleted successfully" });
+    }
   })
   .catch((err)=> {
     res.status(500).json({ error: "Error deleting post", details: err });
