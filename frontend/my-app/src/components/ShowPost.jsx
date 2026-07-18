@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import MusicCard from "./MusicCard";
 import PostActions from "./PostActions";
-import Avatar from "./Avatar";
 import "./Styles.css";
 
 
-function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
+function ShowPost({ refreshTrigger, username, onOpenChat }){
   const [files, setFiles] = useState([]);
   const [activeIndex, setActiveIndex] = useState({});
 
@@ -86,11 +85,9 @@ function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
               {/* Header: avatar + username + timestamp */}
               <div className="post-header">
                 <div className="post-header-left">
-                  <Avatar
-                    username={file.username}
-                    imageUrl={profilePictures?.[file.username?.toLowerCase()]}
-                    className="user-avatar"
-                  />
+                  <div className="user-avatar">
+                    {(file.username || "U").charAt(0).toUpperCase()}
+                  </div>
                   <div className="post-user-info">
                     <span className="post-username">@{file.username}</span>
                     <span className="post-location">{formatTime(file.upload_time)}</span>
@@ -151,7 +148,6 @@ function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
               <PostActions
                 post={file}
                 currentUser={username}
-                profilePictures={profilePictures}
                 onUpdate={handlePostUpdate}
                 onOpenChat={onOpenChat}
               />

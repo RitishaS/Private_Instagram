@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PostActions from "./PostActions";
 import Avatar from "./Avatar";
+import { FiCamera, FiEdit3, FiLogOut } from "react-icons/fi";
 import "./Styles.css";
 
-function Profile({ username, password, profilePicture, profilePictures, onProfilePictureUpdated, onDelete, onOpenChat }) {
+function Profile({ username, password, profilePicture, profilePictures, onProfilePictureUpdated, onDelete, onOpenChat, onLogout }) {
   const [posts, setPosts] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -56,7 +57,10 @@ function Profile({ username, password, profilePicture, profilePictures, onProfil
     );
   };
 
-  const musicCount = posts.filter((p) => p.songVideoId || p.songId).length;
+  // Private, 2-person app: there is no follow graph, so the only possible
+  // follower/following is the other account. Shown as a static stat rather
+  // than fabricated backend data.
+  const partnerCount = 1;
 
   // New posts store every upload in images; older posts only have image_url.
   const getPostImages = (post) => {
@@ -115,14 +119,22 @@ function Profile({ username, password, profilePicture, profilePictures, onProfil
   return (
     <div className="profile-screen">
       <div className="profile-header-card">
-        <Avatar username={username} imageUrl={profilePreview || profilePicture} className="profile-avatar" />
-        <div className="profile-name-block">
-          <div className="profile-username">{username}</div>
-          <div className="profile-tagline">💗 Kuchu Puchu</div>
-        </div>
-      </div>
+        <div className="profile-header-main">
+          <div className="profile-avatar-frame">
+            <Avatar username={username} imageUrl={profilePreview || profilePicture} className="profile-avatar" />
+            <span className="profile-online-dot" title="Active now" aria-label="Active now" />
+            <label htmlFor="profile-picture-input" className="profile-avatar-edit-badge" aria-label="Change profile picture">
+              <FiCamera />
+            </label>
+          </div>
 
-      <div className="profile-picture-editor">
+          <div className="profile-identity">
+            <h2 className="profile-display-name">{username}</h2>
+            <p className="profile-handle">@{username.toLowerCase()}</p>
+            <p className="profile-bio">💗 Kuchu Puchu</p>
+          </div>
+        </div>
+
         <input
           id="profile-picture-input"
           type="file"
@@ -130,15 +142,29 @@ function Profile({ username, password, profilePicture, profilePictures, onProfil
           onChange={handleProfilePictureSelection}
           className="profile-picture-input"
         />
-        <label htmlFor="profile-picture-input" className="profile-picture-select">
-          Edit Profile Picture
-        </label>
+
         {selectedProfilePicture && (
-          <button type="button" className="profile-picture-save" onClick={uploadProfilePicture} disabled={updatingProfilePicture}>
-            {updatingProfilePicture ? "Uploading..." : "Save Picture"}
-          </button>
+          <div className="profile-picture-confirm">
+            <span>New photo selected</span>
+            <button type="button" className="btn-save-picture" onClick={uploadProfilePicture} disabled={updatingProfilePicture}>
+              {updatingProfilePicture ? "Uploading..." : "Save Picture"}
+            </button>
+          </div>
         )}
         {profilePictureMessage && <p className="profile-picture-message">{profilePictureMessage}</p>}
+
+        <div className="profile-header-actions">
+          <label htmlFor="profile-picture-input" className="btn-edit-profile">
+            <FiEdit3 />
+            <span>Edit Profile</span>
+          </label>
+          {onLogout && (
+            <button type="button" className="btn-logout" onClick={onLogout}>
+              <FiLogOut />
+              <span>Logout</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="profile-stats-row">
@@ -146,13 +172,15 @@ function Profile({ username, password, profilePicture, profilePictures, onProfil
           <span className="profile-stat-number">{posts.length}</span>
           <span className="profile-stat-label">Posts</span>
         </div>
+        <div className="profile-stat-divider" />
         <div className="profile-stat">
-          <span className="profile-stat-number">{musicCount}</span>
-          <span className="profile-stat-label">With Music</span>
+          <span className="profile-stat-number">{partnerCount}</span>
+          <span className="profile-stat-label">Followers</span>
         </div>
+        <div className="profile-stat-divider" />
         <div className="profile-stat">
-          <span className="profile-stat-number">∞</span>
-          <span className="profile-stat-label">Memories</span>
+          <span className="profile-stat-number">{partnerCount}</span>
+          <span className="profile-stat-label">Following</span>
         </div>
       </div>
 
