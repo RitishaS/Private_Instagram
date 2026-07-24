@@ -35,8 +35,8 @@ function Login({ onLoginSuccess }) {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1 className="login-title">Private Couple Instagram</h1>
-        <h2>Login</h2>
+        <h1 className="login-title">Our Private Instagram</h1>
+       
         <form onSubmit={handleLogin}>
           <input
             type="text"

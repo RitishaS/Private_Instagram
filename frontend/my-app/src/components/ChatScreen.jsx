@@ -6,7 +6,7 @@ import { io } from "socket.io-client";
 import Avatar from "./Avatar";
 import "./Styles.css";
 
-const CHAT_SERVER_URL = "http://localhost:3000";
+const CHAT_SERVER_URL = import.meta.env.VITE_API_URL;
 const getPartner = (username) => (username === "Ritisha" ? "Manan" : "Ritisha");
 
 const formatTime = (value) =>

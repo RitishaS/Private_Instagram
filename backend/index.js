@@ -1,19 +1,25 @@
-let express = require("express");
-let multer = require("multer");
-let { MongoClient, ObjectId } = require("mongodb");
-let path = require("path");
-let fs = require("fs");
-let cors = require("cors");
-let cloudinary = require("cloudinary").v2;
-let{CloudinaryStorage}=require("multer-storage-cloudinary");
-let { createServer } = require("http");
-let { Server } = require("socket.io");
+import express from "express";
+import multer from "multer";
+import { MongoClient, ObjectId } from "mongodb";
+import path from "path";
+import fs from "fs";
+import cors from "cors";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+
 
 cloudinary.config({
-cloud_name: "dx1lweizb",
-api_key: "241197616858346",
-api_secret: "V0EAGjl4SLxNJenUf2dL0k7QX_c"
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
 
 const app = express();
 const httpServer = createServer(app);
@@ -32,7 +38,7 @@ const users = [
 const CHAT_ROOM = "private-couple-chat";
 const onlineUsers = new Map();
 
-const url = "mongodb://0.0.0.0:27017";
+const url = process.env.MONGO_URI || "mongodb://0.0.0.0:27017";
 
 // let storage=multer.diskStorage(
 //     {
@@ -103,7 +109,7 @@ app.post("/upload", uploadImages, (req, res) => {
     }
 
     let client = new MongoClient(url);
-    let db = client.db("insta");
+    let db = client.db(process.env.DB_NAME || "insta");
     let collection = db.collection("photos");
 
     const images = req.files.map((file) => ({
@@ -156,7 +162,7 @@ app.post("/login", (req, res) => {
 app.get("/profiles", async (req, res) => {
   try {
     const client = new MongoClient(url);
-    const collection = client.db("insta").collection("userProfiles");
+    const collection = client.db(process.env.DB_NAME ).collection("userProfiles");
 
     await collection.bulkWrite(
       users.map(({ username }) => ({
@@ -206,7 +212,7 @@ app.post("/profile-picture", (req, res) => {
         updatedAt: new Date()
       };
       const client = new MongoClient(url);
-      await client.db("insta").collection("userProfiles").updateOne(
+      await client.db(process.env.DB_NAME).collection("userProfiles").updateOne(
         { username },
         { $set: profile },
         { upsert: true }
@@ -241,7 +247,7 @@ app.get("/files", (req, res) => {
 
   const query = conditions.length > 0 ? { $and: conditions } : {};
 
-      let db = client.db("insta");
+      let db = client.db(process.env.DB_NAME);
       let collec= db.collection("photos");
       collec.find(query).sort({ upload_time: -1 }).toArray()
     .then((result) => {
@@ -329,7 +335,7 @@ app.post("/comment/:id", (req, res) => {
   }
 
   let client = new MongoClient(url);
-  let db = client.db("insta");
+  let db = client.db(process.env.DB_NAME );
   let collec = db.collection("photos");
 
   const comment = {
@@ -370,7 +376,7 @@ app.delete("/delete/:id",(req,res)=>{
   }
 
   let client = new MongoClient(url);
-  let db = client.db("insta");
+  let db = client.db(process.env.DB_NAME);
   let collec = db.collection("photos");
   
   collec.findOne({_id})
@@ -416,7 +422,7 @@ app.get("/messages", async (req, res) => {
   try {
     const client = new MongoClient(url);
     const messages = await client
-      .db("insta")
+      .db(process.env.DB_NAME)
       .collection("messages")
       .find({ participants: { $all: users.map((user) => user.username) } })
       .sort({ createdAt: 1 })
@@ -454,7 +460,7 @@ io.on("connection", (socket) => {
 
     try {
       const client = new MongoClient(url);
-      const result = await client.db("insta").collection("messages").insertOne(message);
+      const result = await client.db(process.env.DB_NAME).collection("messages").insertOne(message);
       io.to(CHAT_ROOM).emit("chat:message", { ...message, _id: result.insertedId });
     } catch (err) {
       socket.emit("chat:error", { message: "Message could not be sent" });
@@ -476,7 +482,7 @@ io.on("connection", (socket) => {
     try {
       const seenAt = new Date();
       const client = new MongoClient(url);
-      await client.db("insta").collection("messages").updateMany(
+      await client.db(process.env.DB_NAME).collection("messages").updateMany(
         { recipient, seenAt: { $exists: false } },
         { $set: { seenAt } }
       );
@@ -496,6 +502,8 @@ io.on("connection", (socket) => {
   });
 });
 
-httpServer.listen(3000, () => {
-  console.log("running on http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+
+httpServer.listen(PORT, () => {
+  console.log(`running on http://localhost:${PORT}`);
 });

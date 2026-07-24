@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { YOUTUBE_API_KEY } from "../config";
+const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY
 import "./Styles.css";
 
 function SongSearch({ onSongSelect }) {
