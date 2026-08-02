@@ -6,13 +6,26 @@ import Avatar from "./Avatar";
 import "./Styles.css";
 import "./FeedPremium.css";
 import { FaHeart } from "react-icons/fa";
+import { BsThreeDotsVertical } from "react-icons/bs";
 
 
 function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
   const [files, setFiles] = useState([]);
   const [activeIndex, setActiveIndex] = useState({});
   const [autoplayPostId, setAutoplayPostId] = useState(null);
+  const [openMenuPostId, setOpenMenuPostId] = useState(null);
   const postRefs = useRef(new Map());
+
+  useEffect(() => {
+    const handleDocumentClick = (event) => {
+      if (!event.target.closest(".post-options-wrapper")) {
+        setOpenMenuPostId(null);
+      }
+    };
+
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, []);
 
   useEffect(() => {
     fetchFiles();
@@ -50,15 +63,8 @@ function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
   }, [files]);
 
   const fetchFiles = () => {
-    // The Feed is a partner's-eye view: it excludes the logged-in user's
-    // own posts (those belong on their Profile), and the exclusion is done
-    // by the backend against the real Mongo data - not by hiding posts
-    // client-side after fetching everything.
-    const query = username
-      ? `?exclude=${encodeURIComponent(username)}`
-      : "";
     axios
-      .get(`http://localhost:3000/files${query}`)
+      .get("http://localhost:3000/files")
       .then((response) => {
         setFiles(response.data);
       })
@@ -71,11 +77,18 @@ function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
     axios
       .delete(`http://localhost:3000/delete/${id}`, { data: { username } })
       .then(() => {
+        setOpenMenuPostId(null);
         fetchFiles();
       })
       .catch((error) => {
         console.error("Error deleting file", error);
       });
+  };
+
+  const handleToggleMenu = (postId) => {
+    setOpenMenuPostId((currentOpenMenuPostId) => (
+      currentOpenMenuPostId === postId ? null : postId
+    ));
   };
 
   const handlePostUpdate = (updatedPost) => {
@@ -132,6 +145,32 @@ function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
                     <span className="post-location">{formatTime(file.upload_time)}</span>
                   </div>
                 </div>
+                {file.username?.toLowerCase() === username?.toLowerCase() && (
+                  <div className="post-options-wrapper">
+                    <button
+                      type="button"
+                      className="more-options post-options-trigger"
+                      onClick={() => handleToggleMenu(file._id)}
+                      aria-label="Post options"
+                      aria-haspopup="menu"
+                      aria-expanded={openMenuPostId === file._id}
+                    >
+                      <BsThreeDotsVertical />
+                    </button>
+                    {openMenuPostId === file._id && (
+                      <div className="post-options-menu" role="menu" aria-label="Post actions">
+                        <button
+                          type="button"
+                          className="post-options-item post-options-delete"
+                          onClick={() => handleDelete(file._id)}
+                          role="menuitem"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Image carousel */}
@@ -198,14 +237,6 @@ function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
                   <span className="caption-username">@{file.username}</span>
                   <span className="caption-text">{file.caption}</span>
                 </div>
-                {file.username?.toLowerCase() === username?.toLowerCase() && (
-                  <button
-                    className="delete-button"
-                    onClick={() => handleDelete(file._id)}
-                  >
-                    Delete
-                  </button>
-                )}
               </div>
             </div>
           );

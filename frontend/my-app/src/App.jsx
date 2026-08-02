@@ -8,6 +8,7 @@ import ChatScreen from "./components/ChatScreen";
 import Login from "./components/Login";
 import Avatar from "./components/Avatar";
 import "./components/Styles.css";
+import "./components/HeaderPremium.css";
 import { TiSocialInstagramCircular } from "react-icons/ti";
 import { AiOutlineHome, AiOutlineSearch, AiOutlineMessage, AiOutlineUser } from "react-icons/ai";
 import { RiAddCircleLine } from "react-icons/ri";
@@ -65,17 +66,30 @@ const App = () => {
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <h1>
-          <span className="Ti"><LiaInstagram /></span>
-          <span className="logo"> Manan's Instagram</span>
-        </h1>
-        <div className="user-info">
-          <Avatar
-            username={currentUser}
-            imageUrl={profiles[currentUser.toLowerCase()]}
-            className="header-avatar"
-          />
+      <header className="app-header header-premium">
+        <div className="header-bg-glow" aria-hidden="true" />
+        <span className="header-sparkle" aria-hidden="true" />
+        <span className="header-sparkle" aria-hidden="true" />
+        <span className="header-sparkle" aria-hidden="true" />
+        <span className="header-sparkle" aria-hidden="true" />
+
+        <div className="header-brand">
+          <div className="header-logo-row">
+            <span className="header-icon"><LiaInstagram /></span>
+            <span className="header-logo">Our Instagram</span>
+            <span className="header-heart" aria-hidden="true">💗</span>
+          </div>
+          <p className="header-tagline">Every Memory Matters</p>
+        </div>
+
+        <div className="header-right">
+          <div className="header-avatar-ring">
+            <Avatar
+              username={currentUser}
+              imageUrl={profiles[currentUser.toLowerCase()]}
+              className="header-avatar"
+            />
+          </div>
         </div>
       </header>
 

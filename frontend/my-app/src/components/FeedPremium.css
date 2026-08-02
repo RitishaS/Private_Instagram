@@ -1,6 +1,6 @@
 /* Presentation-only layer for the shared feed. */
-/* Sized to Instagram-like proportions: a compact, centered card so more
-   posts are visible per screen without excessive scrolling. */
+/* Neutral, Instagram-like proportions: compact enough to see more of the
+   feed at once, but not so tight that text/icons feel cramped. */
 
 .feed-premium {
   width: 100%;
@@ -58,7 +58,6 @@
 }
 
 /* ---------- Post card ---------- */
-/* Consistent 16-24px rhythm between consecutive posts. */
 .feed-premium .posts-feed {
   width: 100%;
   gap: 20px;
@@ -80,7 +79,7 @@
   box-shadow: 0 12px 26px rgba(92, 63, 111, .13);
 }
 
-/* Header (profile section) — compact */
+/* Header (profile section) */
 .feed-premium .feed-post-header {
   padding: 9px 12px;
   background: linear-gradient(100deg, rgba(255, 250, 253, .9), rgba(248, 245, 255, .78));
@@ -97,11 +96,11 @@
 .feed-premium .feed-post-image-wrapper {
   background: #f3edf5;
   aspect-ratio: 1 / 1;
-  max-height: 500px;
+  max-height: 460px;
 }
 .feed-premium .post-image-main {
   aspect-ratio: 1 / 1;
-  max-height: 500px;
+  max-height: 460px;
   object-fit: cover;
   transition: transform .5s ease;
 }
@@ -110,7 +109,7 @@
 .feed-premium .post-image-dots { bottom: 9px; }
 .feed-premium .post-image-dot { width: 5px; height: 5px; box-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
 
-/* Music player — compact */
+/* Music player */
 .feed-premium .post-music-container { margin: 0; padding: 8px 12px 0; }
 .feed-premium .music-player {
   padding: 9px 10px;
@@ -126,14 +125,14 @@
 .feed-premium .music-player-title { font-size: 12px; }
 .feed-premium .music-player-artist { font-size: 10.5px; }
 
-/* Action buttons — compact */
+/* Action buttons */
 .feed-premium .post-actions-block { padding: 8px 12px 0; }
 .feed-premium .post-actions { min-height: 26px; gap: 2px; }
 .feed-premium .action-btn { width: 28px; height: 28px; font-size: 18px; border-radius: 9px; padding: 6px; }
 .feed-premium .likes-count, .feed-premium .comments-count { color: #8e7c91; }
 .feed-premium .stat-number { color: #5a4266; }
 
-/* Caption — compact, no bulky extra box */
+/* Caption */
 .feed-premium .feed-post-caption {
   margin: 8px 12px 12px;
   padding: 0;
@@ -168,9 +167,9 @@
 
 /* ---------- Mobile: nearly full width, small side margins ---------- */
 @media (max-width: 600px) {
-  .feed-premium { padding: 12px 8px calc(var(--nav-height) + 18px); }
-  .feed-premium-header { padding: 16px 16px; border-radius: 15px; }
+  .feed-premium { padding: 12px 15px calc(var(--nav-height) + 18px); }
+  .feed-premium-header { padding: 15px 16px; border-radius: 15px; }
   .feed-premium .posts-feed { gap: 16px; }
-  .feed-premium .insta-post { border-radius: 14px; }
+  .feed-premium .insta-post { border-radius: 20px; }
   .feed-premium .post-image-main { max-height: none; }
 }
