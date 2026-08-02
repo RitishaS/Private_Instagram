@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import MusicCard from "./MusicCard";
 import PostActions from "./PostActions";
+import Avatar from "./Avatar";
 import "./Styles.css";
+import "./FeedPremium.css";
+import { FaHeart } from "react-icons/fa";
 
 
-function ShowPost({ refreshTrigger, username, onOpenChat }){
+function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
   const [files, setFiles] = useState([]);
   const [activeIndex, setActiveIndex] = useState({});
+  const [autoplayPostId, setAutoplayPostId] = useState(null);
+  const postRefs = useRef(new Map());
 
   useEffect(() => {
     fetchFiles();
@@ -18,6 +23,31 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
     fetchFiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[refreshTrigger]);
+
+  // Keep the soundtrack tied to the post currently being viewed. Only one
+  // MusicCard can be active because the player itself is shared.
+  useEffect(() => {
+    if (!files.some((file) => file.songId)) {
+      setAutoplayPostId(null);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visiblePosts = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visiblePosts[0]) {
+          setAutoplayPostId(visiblePosts[0].target.dataset.postId);
+        }
+      },
+      { threshold: [0.55, 0.75] }
+    );
+
+    postRefs.current.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [files]);
 
   const fetchFiles = () => {
     // The Feed is a partner's-eye view: it excludes the logged-in user's
@@ -73,21 +103,30 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
   };
 
   return (
-    <div className="insta-feed-container">
-      <h2>Your Feed</h2>
+    <div className="insta-feed-container feed-premium">
       <div className="posts-feed">
         {files.map((file) => {
           const images = getPostImages(file);
           const current = activeIndex[file._id] || 0;
 
           return (
-            <div key={file._id} className="insta-post">
+            <div
+              key={file._id}
+              className="insta-post"
+              data-post-id={file._id}
+              ref={(element) => {
+                if (element && file.songId) postRefs.current.set(file._id, element);
+                else postRefs.current.delete(file._id);
+              }}
+            >
               {/* Header: avatar + username + timestamp */}
-              <div className="post-header">
+              <div className="post-header feed-post-header">
                 <div className="post-header-left">
-                  <div className="user-avatar">
-                    {(file.username || "U").charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar
+                    username={file.username}
+                    imageUrl={profilePictures?.[file.username?.toLowerCase()]}
+                    className="post-avatar"
+                  />
                   <div className="post-user-info">
                     <span className="post-username">@{file.username}</span>
                     <span className="post-location">{formatTime(file.upload_time)}</span>
@@ -96,7 +135,7 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
               </div>
 
               {/* Image carousel */}
-              <div className="post-image-wrapper">
+              <div className="post-image-wrapper feed-post-image-wrapper">
                 {images.length > 0 && (
                   <img
                     src={images[current].image_url}
@@ -141,6 +180,7 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
                   title={file.songTitle}
                   artist={file.songChannel}
                   videoId={file.songId}
+                  autoPlay={autoplayPostId === file._id}
                 />
               )}
 
@@ -153,7 +193,7 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
               />
 
               {/* Caption + delete */}
-              <div className="post-caption-section">
+              <div className="post-caption-section feed-post-caption">
                 <div>
                   <span className="caption-username">@{file.username}</span>
                   <span className="caption-text">{file.caption}</span>
@@ -172,7 +212,11 @@ function ShowPost({ refreshTrigger, username, onOpenChat }){
         })}
 
         {files.length === 0 && (
-          <div className="no-posts">No posts yet.</div>
+          <div className="no-posts feed-empty-state">
+            <span aria-hidden="true">✦</span>
+            <strong>No memories here yet</strong>
+            <p>The next shared moment could be your favorite one.</p>
+          </div>
         )}
       </div>
     </div>

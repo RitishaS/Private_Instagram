@@ -84,7 +84,7 @@ function formatTime(seconds) {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-function MusicCard({ title, artist, thumbnail, videoId }) {
+function MusicCard({ title, artist, thumbnail, videoId, autoPlay = false }) {
   const [isPlaying, setIsPlaying] = useState(false);
   // "active" = this card's video is the one currently loaded in the shared
   // player (whether playing or paused). Used to enable the progress bar/seek
@@ -94,6 +94,7 @@ function MusicCard({ title, artist, thumbnail, videoId }) {
   const [duration, setDuration] = useState(0);
   const pollRef = useRef(null);
   const trackRef = useRef(null);
+  const autoPlayedVideoRef = useRef(null);
 
   // Fall back to YouTube's public thumbnail CDN if no thumbnail was supplied
   // (no thumbnail is currently stored in MongoDB with the post). This is just
@@ -173,6 +174,39 @@ function MusicCard({ title, artist, thumbnail, videoId }) {
       setIsPlaying(false);
     }
   };
+
+  useEffect(() => {
+    if (!autoPlay || !videoId || autoPlayedVideoRef.current === videoId) return undefined;
+
+    let cancelled = false;
+    autoPlayedVideoRef.current = videoId;
+
+    const startAutoPlayback = async () => {
+      try {
+        const player = await getSharedPlayer();
+        if (cancelled) return;
+
+        player.loadVideoById(videoId);
+        player.playVideo();
+        setCurrentTime(0);
+        setDuration(0);
+        setIsPlaying(true);
+        setIsActive(true);
+        notifyPlaying(videoId);
+        startPolling(player);
+      } catch (error) {
+        // Browsers may block the first unmuted autoplay; the visible Play
+        // button remains available as the user-initiated fallback.
+        console.warn("Autoplay was blocked. Use the play button to start audio.", error);
+        setIsPlaying(false);
+      }
+    };
+
+    startAutoPlayback();
+    return () => {
+      cancelled = true;
+    };
+  }, [autoPlay, videoId]);
 
   const handleSeek = async (e) => {
     if (!videoId || !isActive || !duration || !trackRef.current) return;

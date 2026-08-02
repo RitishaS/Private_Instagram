@@ -11,7 +11,7 @@ import "./components/Styles.css";
 import { TiSocialInstagramCircular } from "react-icons/ti";
 import { AiOutlineHome, AiOutlineSearch, AiOutlineMessage, AiOutlineUser } from "react-icons/ai";
 import { RiAddCircleLine } from "react-icons/ri";
-import { FiLogOut } from "react-icons/fi";
+import { LiaInstagram } from "react-icons/lia";
 
 const App = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -67,22 +67,15 @@ const App = () => {
     <div className="app-container">
       <header className="app-header">
         <h1>
-          <span className="Ti"><TiSocialInstagramCircular /></span>
-          <span className="logo">Manan's Instagram</span>
+          <span className="Ti"><LiaInstagram /></span>
+          <span className="logo"> Manan's Instagram</span>
         </h1>
         <div className="user-info">
-          <div className="user-chip">
-            <Avatar
-              username={currentUser}
-              imageUrl={profiles[currentUser.toLowerCase()]}
-              className="header-avatar"
-            />
-            <span className="username">{currentUser}</span>
-          </div>
-          <button className="logout-button" onClick={handleLogout}>
-            <FiLogOut />
-            <span>Logout</span>
-          </button>
+          <Avatar
+            username={currentUser}
+            imageUrl={profiles[currentUser.toLowerCase()]}
+            className="header-avatar"
+          />
         </div>
       </header>
 

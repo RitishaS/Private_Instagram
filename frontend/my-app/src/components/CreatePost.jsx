@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import SongSearch from "./SongSearch";
 import "./Styles.css";
+import "./CreatePostPremium.css";
 
 function CreatePost(props){
   const [imageFiles, setImageFiles] = useState([]);
@@ -91,8 +92,14 @@ function CreatePost(props){
   };
 
   return (
-    <div className="create-post-container">
-      <h2>Create a New Post</h2>
+    <div className="create-post-container create-post-premium">
+      <div className="create-post-glow create-post-glow-one" aria-hidden="true" />
+      <div className="create-post-glow create-post-glow-two" aria-hidden="true" />
+      <header className="create-post-premium-header">
+        <div className="create-post-eyebrow"><span>✦</span> share a little moment</div>
+        <h2>Create a new memory</h2>
+        <p>Turn an ordinary moment into something worth keeping.</p>
+      </header>
       <form onSubmit={handleSubmit} className="upload-form">
         <textarea
           placeholder="Write a caption..."
@@ -139,11 +146,18 @@ function CreatePost(props){
 
         <SongSearch onSongSelect={handleSongSelect} />
 
+        {message && (
+          <p
+            className={`message ${message.includes("successfully") ? "success" : "error"}`}
+            role="status"
+          >
+            {message}
+          </p>
+        )}
         <button type="submit" className="upload-button" disabled={uploading}>
           {uploading ? "Uploading..." : "Upload Post"}
         </button>
       </form>
-      {message && <p className={`message ${message.includes("successfully") ? "success" : "error"}`}>{message}</p>}
     </div>
   );
 };

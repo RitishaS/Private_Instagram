@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY
+import { YOUTUBE_API_KEY } from "../config";
 import "./Styles.css";
 
 function SongSearch({ onSongSelect }) {
@@ -10,8 +10,7 @@ function SongSearch({ onSongSelect }) {
   const [error, setError] = useState("");
   const [selectedSong, setSelectedSong] = useState(null);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+  const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
     setLoading(true);
@@ -19,9 +18,16 @@ function SongSearch({ onSongSelect }) {
     setSearchResults([]);
 
     try {
-      const response = await axios.get(
-        `https://www.googleapis.com/youtube/v3/search?key=${YOUTUBE_API_KEY}&q=${searchQuery}+music&type=video&part=snippet&maxResults=10&videoCategoryId=10`
-      );
+      const response = await axios.get("https://www.googleapis.com/youtube/v3/search", {
+        params: {
+          key: YOUTUBE_API_KEY,
+          q: `${searchQuery} music`,
+          type: "video",
+          part: "snippet",
+          maxResults: 10,
+          videoCategoryId: 10,
+        },
+      });
 
       if (!response.data.items || response.data.items.length === 0) {
         setError("No songs found. Try a different search.");
@@ -60,18 +66,24 @@ function SongSearch({ onSongSelect }) {
   return (
     <div className="song-search-container">
       <h3>🎵 Search for Music</h3>
-      <form onSubmit={handleSearch} className="song-search-form">
+      <div className="song-search-form" role="search">
         <input
           type="text"
           placeholder="Search songs..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSearch();
+            }
+          }}
           className="song-search-input"
         />
-        <button type="submit" className="song-search-button" disabled={loading}>
+        <button type="button" className="song-search-button" onClick={handleSearch} disabled={loading}>
           {loading ? "Searching..." : "Search"}
         </button>
-      </form>
+      </div>
 
       {error && <p className="error-message">{error}</p>}
 
