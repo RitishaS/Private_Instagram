@@ -1,11 +1,244 @@
 /* Presentation-only layer for CreatePost. Its upload and music behavior remain unchanged. */
-.app-container:has(.create-post-premium) main { min-height:0; overflow:hidden; }
-.create-post-premium { position:relative; isolation:isolate; display:flex; flex-direction:column; overflow:hidden; width:100%; max-width:650px; height:calc(100dvh - var(--header-height) - var(--nav-height) - 14px); max-height:760px; padding:0 0 28px; border:1px solid rgba(255,255,255,.78); border-radius:22px; background:rgba(255,255,255,.64); box-shadow:0 28px 70px rgba(106,68,139,.17),inset 0 1px 0 #fff; backdrop-filter:blur(20px) saturate(135%); -webkit-backdrop-filter:blur(20px) saturate(135%); }
-.create-post-premium::before { content:""; position:absolute; z-index:-1; inset:0; background:linear-gradient(145deg,rgba(255,255,255,.46),transparent 42%,rgba(237,219,255,.24)); pointer-events:none; }.create-post-glow { position:absolute; z-index:-1; border-radius:50%; filter:blur(12px); pointer-events:none; }.create-post-glow-one { width:260px; height:260px; top:-160px; right:-95px; background:rgba(255,145,195,.34); }.create-post-glow-two { width:190px; height:190px; bottom:-115px; left:-75px; background:rgba(172,133,255,.27); }
-.create-post-premium-header { flex:0 0 auto; padding:30px 30px 23px; border-bottom:1px solid rgba(137,102,163,.11); text-align:left; }.create-post-eyebrow { display:flex; align-items:center; gap:7px; margin-bottom:8px; color:#956f96; font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; }.create-post-eyebrow span { color:#b578df; }.create-post-premium-header h2 { margin:0; color:#3c2948; font-family:var(--font-display); font-size:clamp(25px,4vw,32px); font-weight:700; letter-spacing:-.035em; }.create-post-premium-header p { margin:7px 0 0; color:#826f88; font-size:13.5px; }
-.create-post-premium .upload-form { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; gap:19px; padding:25px 30px 32px; scrollbar-width:thin; scrollbar-color:rgba(184,116,202,.55) transparent; }.create-post-premium .caption-input { min-height:126px; padding:15px 16px; border:1px solid rgba(133,105,156,.18); border-radius:14px; background:rgba(255,255,255,.58); box-shadow:inset 0 1px 2px rgba(91,58,121,.05); color:#45354e; transition:.22s ease; }.create-post-premium .caption-input:focus { border-color:rgba(202,107,179,.7); background:rgba(255,255,255,.87); box-shadow:0 0 0 4px rgba(218,123,196,.12); }
-.create-post-premium .file-upload-btn { position:relative; display:flex; align-items:center; min-height:84px; padding:18px 20px 18px 78px; border:1px dashed rgba(161,104,191,.48); border-radius:14px; background:linear-gradient(110deg,rgba(255,238,247,.76),rgba(242,236,255,.62)); color:#694e78; font-size:14px; transition:.22s ease; }.create-post-premium .file-upload-btn::before { content:"✦"; position:absolute; left:19px; display:grid; width:40px; height:40px; place-items:center; border-radius:12px; background:linear-gradient(135deg,#ff8dbb,#a17aed); color:#fff; font-size:19px; box-shadow:0 6px 13px rgba(178,99,184,.23); }.create-post-premium .file-upload-btn::after { content:"Choose one or more photos to share"; position:absolute; left:78px; bottom:18px; color:#967d9e; font-size:11px; font-weight:400; }.create-post-premium .file-upload-btn:hover { transform:translateY(-1px); border-color:#d36cae; box-shadow:0 8px 19px rgba(173,107,181,.13); }
-.create-post-premium .image-preview-grid { grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:9px; }.create-post-premium .image-preview-item { border-radius:12px; box-shadow:0 5px 12px rgba(74,46,90,.13); }.create-post-premium .image-preview-remove { top:6px; right:6px; width:25px; height:25px; border:1px solid rgba(255,255,255,.55); background:rgba(48,30,58,.68); }.create-post-premium .file-selected { padding:10px 12px; border-radius:10px; background:rgba(238,222,255,.46); color:#806389; border-left:3px solid #b276dc; }
-.create-post-premium .song-search-container { margin:0; padding:16px; border:1px solid rgba(137,102,163,.11); border-radius:16px; background:rgba(255,255,255,.34); }.create-post-premium .song-search-container h3 { display:flex; align-items:center; gap:7px; color:#654d72; font-size:13px; }.create-post-premium .song-search-input { border-color:rgba(133,105,156,.17); background:rgba(255,255,255,.62); }.create-post-premium .song-search-button { border-radius:12px; box-shadow:0 5px 13px rgba(177,90,178,.22); }.create-post-premium .song-result { border-radius:11px; }
-.create-post-premium .upload-button { position:sticky; z-index:2; bottom:0; min-height:52px; margin-top:0; border-radius:14px; background:linear-gradient(104deg,#ff76af,#d873c9 48%,#8862ec); box-shadow:0 13px 25px rgba(176,83,179,.29),inset 0 1px 0 rgba(255,255,255,.28); }.create-post-premium .upload-button:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 17px 31px rgba(176,83,179,.36); }.create-post-premium .message { margin:0; }
-@media (max-width:600px) { .create-post-premium { height:calc(100dvh - var(--header-height) - var(--nav-height)); max-height:none; margin:0; border-radius:0; border-left:0; border-right:0; }.create-post-premium-header { padding:25px 20px 20px; }.create-post-premium .upload-form { padding:21px 20px 32px; } }
+
+.app-container:has(.create-post-premium) main {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.create-post-premium,
+.create-post-premium * {
+  box-sizing: border-box;
+}
+
+.create-post-premium {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+  max-width: 650px;
+  margin: 0 auto;
+  height: min(760px, calc(100dvh - var(--header-height) - var(--nav-height) - 24px));
+  border: 1px solid rgba(255, 255, 255, .78);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .64);
+  box-shadow: 0 28px 70px rgba(106, 68, 139, .17), inset 0 1px 0 #fff;
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+}
+
+.create-post-premium::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .46), transparent 42%, rgba(237, 219, 255, .24));
+  pointer-events: none;
+}
+
+.create-post-glow {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(12px);
+  pointer-events: none;
+}
+.create-post-glow-one { width: 260px; height: 260px; top: -160px; right: -95px; background: rgba(255, 145, 195, .34); }
+.create-post-glow-two { width: 190px; height: 190px; bottom: -115px; left: -75px; background: rgba(172, 133, 255, .27); }
+
+.create-post-premium-header {
+  flex: 0 0 auto;
+  padding: 30px 30px 23px;
+  border-bottom: 1px solid rgba(137, 102, 163, .11);
+  text-align: left;
+}
+.create-post-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  color: #956f96;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.create-post-eyebrow span { color: #b578df; }
+.create-post-premium-header h2 {
+  margin: 0;
+  color: #3c2948;
+  font-family: var(--font-display);
+  font-size: clamp(25px, 4vw, 32px);
+  font-weight: 700;
+  letter-spacing: -.035em;
+}
+.create-post-premium-header p { margin: 7px 0 0; color: #826f88; font-size: 13.5px; }
+
+/* ---------- Scrollable form body ---------- */
+/* Every direct child is its own section — flex + gap guarantees consistent
+   24-32px spacing and means no section can ever sit on top of another. */
+.create-post-premium .upload-form {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 28px 30px 32px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(184, 116, 202, .55) transparent;
+}
+
+.create-post-premium .form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.create-post-premium .caption-input {
+  min-height: 126px;
+  padding: 15px 16px;
+  border: 1px solid rgba(133, 105, 156, .18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .58);
+  box-shadow: inset 0 1px 2px rgba(91, 58, 121, .05);
+  color: #45354e;
+  transition: .22s ease;
+}
+.create-post-premium .caption-input:focus {
+  border-color: rgba(202, 107, 179, .7);
+  background: rgba(255, 255, 255, .87);
+  box-shadow: 0 0 0 4px rgba(218, 123, 196, .12);
+}
+
+.create-post-premium .file-upload-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 84px;
+  padding: 18px 20px 18px 78px;
+  border: 1px dashed rgba(161, 104, 191, .48);
+  border-radius: 14px;
+  background: linear-gradient(110deg, rgba(255, 238, 247, .76), rgba(242, 236, 255, .62));
+  color: #694e78;
+  font-size: 14px;
+  transition: .22s ease;
+}
+.create-post-premium .file-upload-btn::before {
+  content: "✦";
+  position: absolute;
+  left: 19px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ff8dbb, #a17aed);
+  color: #fff;
+  font-size: 19px;
+  box-shadow: 0 6px 13px rgba(178, 99, 184, .23);
+}
+.create-post-premium .file-upload-btn::after {
+  content: "Choose one or more photos to share";
+  position: absolute;
+  left: 78px;
+  bottom: 18px;
+  color: #967d9e;
+  font-size: 11px;
+  font-weight: 400;
+}
+.create-post-premium .file-upload-btn:hover {
+  transform: translateY(-1px);
+  border-color: #d36cae;
+  box-shadow: 0 8px 19px rgba(173, 107, 181, .13);
+}
+
+.create-post-premium .image-preview-grid {
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 9px;
+}
+.create-post-premium .image-preview-item { border-radius: 12px; box-shadow: 0 5px 12px rgba(74, 46, 90, .13); }
+.create-post-premium .image-preview-remove {
+  top: 6px; right: 6px; width: 25px; height: 25px;
+  border: 1px solid rgba(255, 255, 255, .55);
+  background: rgba(48, 30, 58, .68);
+}
+.create-post-premium .file-selected {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(238, 222, 255, .46);
+  color: #806389;
+  border-left: 3px solid #b276dc;
+}
+
+.create-post-premium .song-search-container {
+  margin: 0;
+  padding: 16px;
+  border: 1px solid rgba(137, 102, 163, .11);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .34);
+  width: 100%;
+  min-width: 0;
+}
+.create-post-premium .song-search-container h3 {
+  display: flex; align-items: center; gap: 7px;
+  color: #654d72; font-size: 13px;
+}
+.create-post-premium .song-search-form { min-width: 0; }
+.create-post-premium .song-search-input { border-color: rgba(133, 105, 156, .17); background: rgba(255, 255, 255, .62); min-width: 0; }
+.create-post-premium .song-search-button { border-radius: 12px; box-shadow: 0 5px 13px rgba(177, 90, 178, .22); flex-shrink: 0; }
+.create-post-premium .song-result { border-radius: 11px; }
+.create-post-premium .search-results-container { min-width: 0; }
+
+.create-post-premium .message { margin: 0; }
+
+/* Upload button lives in the normal document flow as the form's last
+   section — it can never overlap earlier content, on any screen size. */
+.create-post-premium .submit-section { gap: 0; }
+.create-post-premium .upload-button {
+  position: static;
+  width: 100%;
+  min-height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(104deg, #ff76af, #d873c9 48%, #8862ec);
+  box-shadow: 0 13px 25px rgba(176, 83, 179, .29), inset 0 1px 0 rgba(255, 255, 255, .28);
+}
+.create-post-premium .upload-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 17px 31px rgba(176, 83, 179, .36);
+}
+
+/* ---------- Tablet ---------- */
+@media (min-width: 601px) and (max-width: 900px) {
+  .create-post-premium { max-width: 88vw; }
+  .create-post-premium-header { padding: 28px 26px 20px; }
+  .create-post-premium .upload-form { padding: 26px 26px 32px; gap: 26px; }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 600px) {
+  .create-post-premium {
+    height: calc(100dvh - var(--header-height) - var(--nav-height));
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .create-post-premium-header { padding: 25px 20px 20px; }
+  .create-post-premium .upload-form { padding: 24px 20px 32px; gap: 24px; }
+}
+
+/* ---------- Very small phones: keep the song search row from overflowing ---------- */
+@media (max-width: 380px) {
+  .create-post-premium .song-search-form { flex-direction: column; }
+  .create-post-premium .song-search-button { width: 100%; padding: 12px 18px; }
+}
