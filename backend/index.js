@@ -64,16 +64,54 @@ const profilePictureUpload = multer({
   }
 }).single("profilePicture");
 
-// Authentication check function
-const authenticateUser = (username, password) => {
-  return users.some(user => user.username === username && user.password === password);
+const extractUsernameText = (value) => {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return "";
+
+  const nestedCandidates = [
+    value.username,
+    value.ownerUsername,
+    value.author,
+    value.createdBy,
+    value.postedBy,
+    value.user,
+    value.profile?.username
+  ];
+
+  for (const candidate of nestedCandidates) {
+    const text = extractUsernameText(candidate).trim();
+    if (text) return text;
+  }
+
+  return "";
 };
 
-const getKnownUsername = (username) => {
-  const user = users.find(
-    (item) => item.username.toLowerCase() === (username || "").trim().toLowerCase()
-  );
-  return user ? user.username : null;
+const normalizeUsername = (value) => extractUsernameText(value).trim();
+
+const findKnownUser = (value) => {
+  const normalized = normalizeUsername(value).toLowerCase();
+  if (!normalized) return null;
+  return users.find((user) => user.username.toLowerCase() === normalized) || null;
+};
+
+const getCanonicalUsername = (value) => {
+  const normalized = normalizeUsername(value);
+  if (!normalized) return null;
+  return findKnownUser(normalized)?.username || normalized;
+};
+
+const getKnownUsername = (username) => findKnownUser(username)?.username || null;
+
+const usernamesMatch = (left, right) => {
+  const leftUsername = normalizeUsername(left).toLowerCase();
+  const rightUsername = normalizeUsername(right).toLowerCase();
+  return Boolean(leftUsername && rightUsername && leftUsername === rightUsername);
+};
+
+// Authentication check function
+const authenticateUser = (username, password) => {
+  const canonicalUsername = getKnownUsername(username);
+  return Boolean(canonicalUsername && users.some((user) => user.username === canonicalUsername && user.password === password));
 };
 
 const getDefaultProfilePicture = (username) => {
@@ -97,6 +135,7 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 app.post("/upload", uploadImages, (req, res) => {
     const { username, password, caption, songId, songTitle, songChannel } = req.body;
+    const canonicalUsername = getKnownUsername(username);
     
     // Check if user is authorized
     if (!authenticateUser(username, password)) {
@@ -118,7 +157,8 @@ app.post("/upload", uploadImages, (req, res) => {
     }));
     
     let obj = {
-        username: username,
+        username: canonicalUsername,
+        ownerUsername: canonicalUsername,
         caption: caption,
         // Keep legacy single-image fields (first image) so any older
         // frontend code or existing posts keep working unchanged
@@ -151,7 +191,7 @@ app.post("/login", (req, res) => {
   const { username, password } = req.body;
   
   if (authenticateUser(username, password)) {
-    res.json({ success: true, username });
+    res.json({ success: true, username: getKnownUsername(username) });
   } else {
     res.status(401).json({ success: false, error: "Invalid credentials" });
   }
@@ -228,28 +268,9 @@ app.get("/files", (req, res) => {
   let client = new MongoClient(url);
   const { username, exclude } = req.query;
 
-  // Build the query out of real, explicit conditions instead of a single
-  // implicit equality object, so "give me my own posts" (username=) and
-  // "give me everyone else's posts" (exclude=) can never be conflated.
-  const conditions = [];
-
-  if (username && username.trim()) {
-    conditions.push({
-      username: { $regex: `^${escapeRegex(username.trim())}$`, $options: "i" }
-    });
-  }
-
-  if (exclude && exclude.trim()) {
-    conditions.push({
-      username: { $not: { $regex: `^${escapeRegex(exclude.trim())}$`, $options: "i" } }
-    });
-  }
-
-  const query = conditions.length > 0 ? { $and: conditions } : {};
-
       let db = client.db(process.env.DB_NAME);
       let collec= db.collection("photos");
-      collec.find(query).sort({ upload_time: -1 }).toArray()
+      collec.find({}).sort({ upload_time: -1 }).toArray()
     .then((result) => {
       const uploadOrigin = `${req.protocol}://${req.get("host")}`;
       const toRenderableUrl = (imageUrl) =>
@@ -257,18 +278,45 @@ app.get("/files", (req, res) => {
           ? `${uploadOrigin}${imageUrl}`
           : imageUrl;
 
-      // Older uploads stored local paths such as /uploads/photo.jpg. Those
-      // paths must be served from Express, not resolved against the frontend.
-      const posts = result.map((post) => ({
-        ...post,
-        image_url: toRenderableUrl(post.image_url),
-        images: Array.isArray(post.images)
-          ? post.images.map((image) => ({
-              ...image,
-              image_url: toRenderableUrl(image.image_url)
-            }))
-          : post.images
-      }));
+      const requestedUsername = normalizeUsername(username);
+      const excludedUsername = normalizeUsername(exclude);
+
+      const posts = result
+        .filter((post) => {
+          const ownerUsername = getCanonicalUsername(
+            post?.username ?? post?.ownerUsername ?? post?.author ?? post?.createdBy ?? post?.postedBy ?? post?.user
+          );
+
+          if (requestedUsername && !usernamesMatch(ownerUsername, requestedUsername)) {
+            return false;
+          }
+
+          if (excludedUsername && usernamesMatch(ownerUsername, excludedUsername)) {
+            return false;
+          }
+
+          return true;
+        })
+        .map((post) => {
+          const ownerUsername = getCanonicalUsername(
+            post?.username ?? post?.ownerUsername ?? post?.author ?? post?.createdBy ?? post?.postedBy ?? post?.user
+          );
+
+          // Normalize owner fields on the way out so the frontend sees one
+          // stable username shape no matter how the MongoDB document was stored.
+          return {
+            ...post,
+            username: ownerUsername,
+            ownerUsername,
+            image_url: toRenderableUrl(post.image_url),
+            images: Array.isArray(post.images)
+              ? post.images.map((image) => ({
+                  ...image,
+                  image_url: toRenderableUrl(image.image_url)
+                }))
+              : post.images
+          };
+        });
 
       res.json(posts);
     })
@@ -385,7 +433,11 @@ app.delete("/delete/:id",(req,res)=>{
       return res.status(404).json({ error: "Post not found" });
     }
 
-    if ((post.username || "").toLowerCase() !== username.toLowerCase()) {
+    const ownerUsername = getCanonicalUsername(
+      post?.username ?? post?.ownerUsername ?? post?.author ?? post?.createdBy ?? post?.postedBy ?? post?.user
+    );
+
+    if (!usernamesMatch(ownerUsername, username)) {
       return res.status(403).json({ error: "You can only delete your own posts" });
     }
     
