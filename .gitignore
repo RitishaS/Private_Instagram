@@ -3,6 +3,15 @@ node_modules/
 
 # env files
 .env
+*.env.local
+backend/.env
+backend/.env.local
+frontend/my-app/.env
+frontend/my-app/.env.local
+
+# exposed secret files
+youtube_api.txt
+googlepass-*.txt
 
 # build outputs
 dist/

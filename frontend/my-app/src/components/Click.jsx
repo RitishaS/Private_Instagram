@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import axios from "axios";
 import "./Click.css"
+import { API_BASE_URL } from "../config";
 
 const Click = ({ onClose, onUpload }) => {
   const videoRef = useRef(null);
@@ -42,7 +43,7 @@ const Click = ({ onClose, onUpload }) => {
     formData.append("caption", caption);
   
     try {
-      await axios.post("http://localhost:3000/upload", formData, {
+      await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
   

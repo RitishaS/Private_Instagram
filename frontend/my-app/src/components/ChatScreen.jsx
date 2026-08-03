@@ -4,9 +4,10 @@ import EmojiPicker from "emoji-picker-react";
 import { FiArrowLeft, FiSend, FiSmile } from "react-icons/fi";
 import { io } from "socket.io-client";
 import Avatar from "./Avatar";
+import { API_BASE_URL } from "../config";
 import "./Styles.css";
 
-const CHAT_SERVER_URL = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/$/, "");
+const CHAT_SERVER_URL = API_BASE_URL;
 const getPartner = (username) => (username === "Ritisha" ? "Manan" : "Ritisha");
 
 const formatTime = (value) =>

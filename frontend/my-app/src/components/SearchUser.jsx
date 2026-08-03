@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import MusicCard from "./MusicCard";
 import Avatar from "./Avatar";
+import { API_BASE_URL } from "../config";
 import "./Styles.css";
 
 function SearchUser({ profilePictures }){
@@ -14,7 +15,7 @@ function SearchUser({ profilePictures }){
     if (!username.trim()) return;
 
     axios
-      .get(`http://localhost:3000/files?username=${username}`)
+      .get(`${API_BASE_URL}/files?username=${encodeURIComponent(username)}`)
       .then((response) => {
         setSearchResults(response.data);
         setError("");

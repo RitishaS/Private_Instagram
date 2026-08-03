@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import SongSearch from "./SongSearch";
+import { API_BASE_URL } from "../config";
 import "./Styles.css";
 import "./CreatePostPremium.css";
 
@@ -68,7 +69,7 @@ function CreatePost(props){
 
     try {
       setUploading(true);
-      const response = await axios.post("http://localhost:3000/upload", formData, {
+      const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       

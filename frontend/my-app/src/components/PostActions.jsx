@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Avatar from "./Avatar";
+import { API_BASE_URL } from "../config";
 import "./Styles.css";
 
 // Renders like + comment controls for a single post, and persists every
@@ -22,7 +23,7 @@ function PostActions({ post, currentUser, profilePictures, onUpdate }) {
   const handleLike = () => {
     if (!currentUser) return;
     axios
-      .post(`http://localhost:3000/like/${post._id}`, { username: currentUser })
+      .post(`${API_BASE_URL}/like/${post._id}`, { username: currentUser })
       .then((response) => {
         onUpdate({ ...post, likes: response.data.likes });
       })
@@ -38,7 +39,7 @@ function PostActions({ post, currentUser, profilePictures, onUpdate }) {
 
     setSubmitting(true);
     axios
-      .post(`http://localhost:3000/comment/${post._id}`, {
+      .post(`${API_BASE_URL}/comment/${post._id}`, {
         username: currentUser,
         text: commentText.trim(),
       })

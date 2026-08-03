@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { FiLock, FiUser } from "react-icons/fi";
+import { API_BASE_URL } from "../config";
 import "./Styles.css";
 import "./LoginPremium.css";
 
@@ -16,7 +17,7 @@ function Login({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:3000/login", {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
         username,
         password,
       });

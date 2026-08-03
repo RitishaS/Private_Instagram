@@ -1,3 +1,4 @@
-// YouTube Data API Configuration
-// Add your YouTube API key here
-export const YOUTUBE_API_KEY = "AIzaSyAX5KFeZcPYhdJNhO5vejCqdOv_Pr4AmpM";
+const trimTrailingSlash = (value) => (typeof value === "string" ? value.replace(/\/$/, "") : "");
+
+export const API_BASE_URL = trimTrailingSlash(import.meta.env.VITE_API_URL || "http://localhost:3000");
+export const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || "";

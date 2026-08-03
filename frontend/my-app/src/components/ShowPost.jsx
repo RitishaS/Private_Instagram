@@ -3,6 +3,7 @@ import axios from "axios";
 import MusicCard from "./MusicCard";
 import PostActions from "./PostActions";
 import Avatar from "./Avatar";
+import { API_BASE_URL } from "../config";
 import "./Styles.css";
 import "./FeedPremium.css";
 import { FaHeart } from "react-icons/fa";
@@ -64,7 +65,7 @@ function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
 
   const fetchFiles = () => {
     axios
-      .get("http://localhost:3000/files")
+      .get(`${API_BASE_URL}/files`)
       .then((response) => {
         setFiles(response.data);
       })
@@ -75,7 +76,7 @@ function ShowPost({ refreshTrigger, username, profilePictures, onOpenChat }){
 
   const handleDelete = (id) => {
     axios
-      .delete(`http://localhost:3000/delete/${id}`, { data: { username } })
+      .delete(`${API_BASE_URL}/delete/${id}`, { data: { username } })
       .then(() => {
         setOpenMenuPostId(null);
         fetchFiles();

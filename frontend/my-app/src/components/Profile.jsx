@@ -3,6 +3,7 @@ import axios from "axios";
 import PostActions from "./PostActions";
 import Avatar from "./Avatar";
 import { FiCamera, FiEdit3, FiLogOut } from "react-icons/fi";
+import { API_BASE_URL } from "../config";
 import "./Styles.css";
 
 function Profile({ username, password, profilePicture, profilePictures, onProfilePictureUpdated, onDelete, onOpenChat, onLogout }) {
@@ -19,7 +20,7 @@ function Profile({ username, password, profilePicture, profilePictures, onProfil
   const fetchPosts = () => {
     setLoading(true);
     axios
-      .get(`http://localhost:3000/files?username=${username}`)
+      .get(`${API_BASE_URL}/files?username=${encodeURIComponent(username)}`)
       .then((response) => {
         setPosts(response.data || []);
         setError("");
@@ -37,7 +38,7 @@ function Profile({ username, password, profilePicture, profilePictures, onProfil
 
   const handleDelete = (id) => {
     axios
-      .delete(`http://localhost:3000/delete/${id}`, { data: { username } })
+      .delete(`${API_BASE_URL}/delete/${id}`, { data: { username } })
       .then(() => {
         setActivePost(null);
         fetchPosts();
@@ -103,7 +104,7 @@ function Profile({ username, password, profilePicture, profilePictures, onProfil
 
     try {
       setUpdatingProfilePicture(true);
-      const response = await axios.post("http://localhost:3000/profile-picture", formData);
+      const response = await axios.post(`${API_BASE_URL}/profile-picture`, formData);
       onProfilePictureUpdated(response.data.profile);
       URL.revokeObjectURL(profilePreview);
       setSelectedProfilePicture(null);

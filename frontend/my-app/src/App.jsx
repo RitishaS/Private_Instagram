@@ -7,6 +7,7 @@ import Profile from "./components/Profile";
 import ChatScreen from "./components/ChatScreen";
 import Login from "./components/Login";
 import Avatar from "./components/Avatar";
+import { API_BASE_URL } from "./config";
 import "./components/Styles.css";
 import "./components/HeaderPremium.css";
 import { TiSocialInstagramCircular } from "react-icons/ti";
@@ -28,7 +29,7 @@ const App = () => {
       return;
     }
 
-    axios.get("http://localhost:3000/profiles")
+    axios.get(`${API_BASE_URL}/profiles`)
       .then((response) => {
         setProfiles(
           (response.data || []).reduce((allProfiles, profile) => ({

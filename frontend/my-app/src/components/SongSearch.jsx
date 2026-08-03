@@ -13,6 +13,11 @@ function SongSearch({ onSongSelect }) {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
+    if (!YOUTUBE_API_KEY) {
+      setError("YouTube API key is not configured.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSearchResults([]);
