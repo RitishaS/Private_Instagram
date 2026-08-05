@@ -39,6 +39,7 @@ const CHAT_ROOM = "private-couple-chat";
 const onlineUsers = new Map();
 
 const url = process.env.MONGO_URI || "mongodb://0.0.0.0:27017";
+const DB_NAME = process.env.DB_NAME || "insta";
 
 // let storage=multer.diskStorage(
 //     {
@@ -148,7 +149,7 @@ app.post("/upload", uploadImages, (req, res) => {
     }
 
     let client = new MongoClient(url);
-    let db = client.db(process.env.DB_NAME || "insta");
+    let db = client.db(DB_NAME);
     let collection = db.collection("photos");
 
     const images = req.files.map((file) => ({
@@ -179,6 +180,7 @@ app.post("/upload", uploadImages, (req, res) => {
 
     collection.insertOne(obj)
       .then((result) => {
+        console.log("[upload] inserted post", { insertedId: result.insertedId, username });
         res.json({ success: true, message: "Post created successfully", data: result });
       })
       .catch((err) => {
@@ -202,7 +204,7 @@ app.post("/login", (req, res) => {
 app.get("/profiles", async (req, res) => {
   try {
     const client = new MongoClient(url);
-    const collection = client.db(process.env.DB_NAME ).collection("userProfiles");
+    const collection = client.db(DB_NAME).collection("userProfiles");
 
     await collection.bulkWrite(
       users.map(({ username }) => ({
@@ -252,7 +254,7 @@ app.post("/profile-picture", (req, res) => {
         updatedAt: new Date()
       };
       const client = new MongoClient(url);
-      await client.db(process.env.DB_NAME).collection("userProfiles").updateOne(
+      await client.db(DB_NAME).collection("userProfiles").updateOne(
         { username },
         { $set: profile },
         { upsert: true }
@@ -268,9 +270,26 @@ app.get("/files", (req, res) => {
   let client = new MongoClient(url);
   const { username, exclude } = req.query;
 
-      let db = client.db(process.env.DB_NAME);
-      let collec= db.collection("photos");
-      collec.find({}).sort({ upload_time: -1 }).toArray()
+const conditions = [];
+
+if (username && username.trim()) {
+  conditions.push({
+    username: { $regex: `^${escapeRegex(username.trim())}$`, $options: "i" }
+  });
+}
+
+if (exclude && exclude.trim()) {
+  conditions.push({
+    username: { $not: { $regex: `^${escapeRegex(exclude.trim())}$`, $options: "i" } }
+  });
+}
+
+const query = conditions.length > 0 ? { $and: conditions } : {};
+
+      let db = client.db(DB_NAME);
+      let collec = db.collection("photos");
+
+      collec.find(query).sort({ upload_time: -1 }).toArray()
     .then((result) => {
       const uploadOrigin = `${req.protocol}://${req.get("host")}`;
       const toRenderableUrl = (imageUrl) =>
@@ -342,7 +361,7 @@ app.post("/like/:id", async (req, res) => {
 
   try {
     const client = new MongoClient(url);
-    const collec = client.db("insta").collection("photos");
+    const collec = client.db(DB_NAME).collection("photos");
     const post = await collec.findOne({ _id });
 
     if (!post) {
@@ -383,7 +402,7 @@ app.post("/comment/:id", (req, res) => {
   }
 
   let client = new MongoClient(url);
-  let db = client.db(process.env.DB_NAME );
+  let db = client.db(DB_NAME);
   let collec = db.collection("photos");
 
   const comment = {
@@ -424,7 +443,7 @@ app.delete("/delete/:id",(req,res)=>{
   }
 
   let client = new MongoClient(url);
-  let db = client.db(process.env.DB_NAME);
+  let db = client.db(DB_NAME);
   let collec = db.collection("photos");
   
   collec.findOne({_id})
@@ -474,7 +493,7 @@ app.get("/messages", async (req, res) => {
   try {
     const client = new MongoClient(url);
     const messages = await client
-      .db(process.env.DB_NAME)
+      .db(DB_NAME)
       .collection("messages")
       .find({ participants: { $all: users.map((user) => user.username) } })
       .sort({ createdAt: 1 })
