@@ -1,8 +1,12 @@
-{
-   "type": "module",
+﻿{
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^5.1.0",
     "fs": "^0.0.1-security",
     "mongodb": "^6.18.0",

@@ -1,5 +1,19 @@
 {
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
-    "dotenv": "^17.4.2"
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "mongodb": "^6.18.0",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
+    "nodemon": "^3.1.14",
+    "path": "^0.12.7",
+    "socket.io": "^4.8.3"
   }
 }
